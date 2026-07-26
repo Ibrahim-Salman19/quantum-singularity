@@ -792,8 +792,8 @@ scene.add(stars);
 // 4. SLIDER CONTROLS
 // ═══════════════════════════════════════════
 const uiV = {
-    shape:0, scale:25, gravity:2.0, jetPower:1.5, chaos:0.8, speed:0.85,
-    palette:0, psize:1.0, bloom:0.95
+    shape:0, scale:15, gravity:0.5, jetPower:0, chaos:0, speed:0.2,
+    palette:0, psize:2.8, bloom:0
 };
 const DEFAULTS = { ...uiV };
 
@@ -838,13 +838,13 @@ function syncPresetBtns(val) {
 }
 
 mkSlider('cg-shape',   'shape',    'Morph Topology',  0,   3,    0   );
-mkSlider('cg-scale',   'scale',    'Event Horizon',   15,  60,   25  );
-mkSlider('cg-gravity', 'gravity',  'Spacetime Warp',  0.5, 5,    2.0 );
-mkSlider('cg-jetpower','jetPower', 'Jet Energy',      0,   3,    1.5 );
-mkSlider('cg-chaos',   'chaos',    'Curl Chaos',      0,   2,    0.8 );
-mkSlider('cg-speed',   'speed',    'Time Warp',       0.2, 2.0,  0.85);
-mkSlider('cg-psize',   'psize',    'Particle Scale',  0.4, 2.8,  1.0 );
-mkSlider('cg-bloom',   'bloom',    'Bloom Intensity', 0.0, 2.5,  0.95);
+mkSlider('cg-scale',   'scale',    'Event Horizon',   15,  60,   15  );
+mkSlider('cg-gravity', 'gravity',  'Spacetime Warp',  0.5, 5,    0.5 );
+mkSlider('cg-jetpower','jetPower', 'Jet Energy',      0,   3,    0   );
+mkSlider('cg-chaos',   'chaos',    'Curl Chaos',      0,   2,    0   );
+mkSlider('cg-speed',   'speed',    'Time Warp',       0.2, 2.0,  0.2 );
+mkSlider('cg-psize',   'psize',    'Particle Scale',  0.4, 2.8,  2.8 );
+mkSlider('cg-bloom',   'bloom',    'Bloom Intensity', 0.0, 2.5,  0   );
 
 // Preset buttons
 document.querySelectorAll('.btn-preset').forEach(btn => {
