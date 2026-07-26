@@ -1103,23 +1103,23 @@ async function initNeural() {
 
 const oefZoom = new OEF(30, 0.8, 0.02);
 
-function applyGesture(g, rx, ry, ts, hSize) {
-    const fx = oefX.filter(rx, ts*0.001), fy = oefY.filter(ry, ts*0.001);
-    const dX = lastHX >= 0 ? fx - lastHX : 0;
-    const dY = lastHY >= 0 ? fy - lastHY : 0;
-    const sdX = Math.abs(dX) < 0.12 ? dX : 0;
-    const sdY = Math.abs(dY) < 0.12 ? dY : 0;
+function applyGesture(g, lm, ts, hSize) {
     const scl = uiV.scale;
 
     if (g === 'Pointing_Up') {
         wantAutoRotate = false;
         isZoomingActive = false;
-        scene.rotation.y += sdX * 3.8;
-        scene.rotation.x  = Math.max(-Math.PI/2.6, Math.min(Math.PI/2.6, scene.rotation.x + sdY*2.8));
-        handWorldPos.set((fx - 0.5)*scl*5.0, (0.5 - fy)*scl*3.5, 0);
-        handInfl = Math.min(handInfl + 0.12, 1.0);
+
+        // Pinpoint 3D Raycasting: map index fingertip (lm[8]) from camera screen space to 3D world space
+        const tipX = (1.0 - lm[8].x) * 2.0 - 1.0;
+        const tipY = (1.0 - lm[8].y) * 2.0 - 1.0;
+        const handNDC = new THREE.Vector2(tipX, tipY);
+        raycaster.setFromCamera(handNDC, camera);
+        raycaster.ray.intersectPlane(groundPlane, handWorldPos);
+
+        handInfl = Math.min(handInfl + 0.16, 1.0);
     } else {
-        handInfl *= 0.9;
+        handInfl *= 0.88;
         if (g === 'Open_Palm') {
             wantAutoRotate = true;
             isZoomingActive = true;
@@ -1130,12 +1130,17 @@ function applyGesture(g, rx, ry, ts, hSize) {
         } else if (g === 'Victory') {
             wantAutoRotate = true;
             isZoomingActive = false;
+            // Use index-middle tip movement for smooth chaos control
+            const rx = 1.0 - lm[8].x, ry = lm[8].y;
+            const fx = oefX.filter(rx, ts*0.001);
+            const dX = lastHX >= 0 ? fx - lastHX : 0;
+            const sdX = Math.abs(dX) < 0.12 ? dX : 0;
             setSlider('chaos', Math.max(0, Math.min(2, uiV.chaos + sdX*6.0)));
+            lastHX = fx;
         } else {
             isZoomingActive = false;
         }
     }
-    lastHX = fx; lastHY = fy;
 }
 
 let lastCamTime = 0;
@@ -1166,14 +1171,13 @@ function camLoop() {
         const mlGesture = (ml && ml.score > 0.70) ? ml.categoryName : null;
         const raw = mlGesture ?? lG;
         const conf = updateGesture(raw);
-        const hx = 1.0 - lm[0].x, hy = lm[0].y;
         const hSize = Math.hypot(lm[12].x - lm[0].x, lm[12].y - lm[0].y);
 
         if (conf) {
             const label = conf.replace(/_/g,' ');
             gnameEl.textContent = label.toUpperCase();
             statusEl.textContent = '● ' + label; statusEl.style.color = '#00ffcc';
-            applyGesture(conf, hx, hy, ts, hSize);
+            applyGesture(conf, lm, ts, hSize);
             if (conf !== prevConfG) pulseRing();
         } else {
             gnameEl.textContent = pendG ? `…${pendG.replace(/_/g,' ')} (${pendN}/${CONFIRM})` : '';
