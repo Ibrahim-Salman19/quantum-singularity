@@ -439,7 +439,7 @@
             <div class="guide-card">
                 <div class="card-icon">✋</div>
                 <div class="card-title">Palm → Zoom</div>
-                <div class="card-desc">Move open palm left or right to smoothly zoom the camera in and out.</div>
+                <div class="card-desc">Move open palm closer to camera to zoom in, or further away to zoom out.</div>
             </div>
             <div class="guide-card">
                 <div class="card-icon">✌️</div>
@@ -1027,15 +1027,27 @@ function updateGesture(raw) {
 }
 
 const FP = [[8,6],[12,10],[16,14],[20,18]];
-const extN    = lm => FP.reduce((n,[t,p]) => n + (lm[t].y < lm[p].y ? 1 : 0), 0);
-const isPalm  = lm => extN(lm) >= 4;
-const isPeace = lm => lm[8].y<lm[6].y && lm[12].y<lm[10].y && lm[16].y>lm[14].y && lm[20].y>lm[18].y;
-const isPoint = lm => lm[8].y<lm[6].y && lm[12].y>lm[10].y && lm[16].y>lm[14].y && lm[20].y>lm[18].y;
+// Palm detection: 3 or 4 fingers extended relative to wrist lm[0] (orientation invariant)
+const isFingerExtended = (lm, tip, pip) => {
+    const dTip = Math.hypot(lm[tip].x - lm[0].x, lm[tip].y - lm[0].y);
+    const dPip = Math.hypot(lm[pip].x - lm[0].x, lm[pip].y - lm[0].y);
+    return dTip > dPip * 1.15;
+};
+const isPalm  = lm => {
+    let ext = 0;
+    if (isFingerExtended(lm, 8, 6)) ext++;   // Index
+    if (isFingerExtended(lm, 12, 10)) ext++; // Middle
+    if (isFingerExtended(lm, 16, 14)) ext++; // Ring
+    if (isFingerExtended(lm, 20, 18)) ext++; // Pinky
+    return ext >= 3;
+};
+const isPeace = lm => isFingerExtended(lm, 8, 6) && isFingerExtended(lm, 12, 10) && !isFingerExtended(lm, 16, 14) && !isFingerExtended(lm, 20, 18);
+const isPoint = lm => isFingerExtended(lm, 8, 6) && !isFingerExtended(lm, 12, 10) && !isFingerExtended(lm, 16, 14) && !isFingerExtended(lm, 20, 18);
 
 // ═══════════════════════════════════════════
 // 8. MEDIAPIPE NEURAL LINK
 // ═══════════════════════════════════════════
-let recognizer=null, drawUtil=null, lastVT=-1, lastHX=-1, lastHY=-1;
+let recognizer=null, drawUtil=null, lastVT=-1, lastHX=-1, lastHY=-1, currentHandSize=0.25;
 const handWorldPos  = new THREE.Vector3();
 let handInfl = 0.0;
 let wantAutoRotate = true;
@@ -1087,7 +1099,9 @@ async function initNeural() {
     }
 }
 
-function applyGesture(g, rx, ry, ts) {
+const oefZoom = new OEF(30, 0.8, 0.02);
+
+function applyGesture(g, rx, ry, ts, hSize) {
     const fx = oefX.filter(rx, ts*0.001), fy = oefY.filter(ry, ts*0.001);
     const dX = lastHX >= 0 ? fx - lastHX : 0;
     const dY = lastHY >= 0 ? fy - lastHY : 0;
@@ -1104,8 +1118,19 @@ function applyGesture(g, rx, ry, ts) {
     } else {
         handInfl *= 0.9;
         if (g === 'Open_Palm') {
-            camera.position.z += (28 + fx*265 - camera.position.z) * 0.07;
             wantAutoRotate = true;
+            // Map hand size (distance to webcam) & vertical position to smooth 3D camera zoom radius
+            const filteredSize = oefZoom.filter(hSize, ts*0.001);
+            const normSize = Math.max(0, Math.min(1, (filteredSize - 0.15) / 0.38));
+            const targetRadius = THREE.MathUtils.lerp(240, 35, normSize);
+
+            const currentRadius = camera.position.distanceTo(orbit.target);
+            const lerpedRadius  = THREE.MathUtils.lerp(currentRadius, targetRadius, 0.12);
+
+            const dir = camera.position.clone().sub(orbit.target).normalize();
+            if (dir.lengthSq() > 0.0001) {
+                camera.position.copy(orbit.target).addScaledVector(dir, lerpedRadius);
+            }
         } else if (g === 'Victory') {
             setSlider('chaos', Math.max(0, Math.min(2, uiV.chaos + sdX*6.0)));
             wantAutoRotate = true;
@@ -1142,12 +1167,13 @@ function camLoop() {
         const raw = lG ?? (ml && ml.score > 0.82 ? ml.categoryName : null);
         const conf = updateGesture(raw);
         const hx = 1.0 - lm[0].x, hy = lm[0].y;
+        const hSize = Math.hypot(lm[12].x - lm[0].x, lm[12].y - lm[0].y);
 
         if (conf) {
             const label = conf.replace(/_/g,' ');
             gnameEl.textContent = label.toUpperCase();
             statusEl.textContent = '● ' + label; statusEl.style.color = '#00ffcc';
-            applyGesture(conf, hx, hy, ts);
+            applyGesture(conf, hx, hy, ts, hSize);
             if (conf !== prevConfG) pulseRing();
         } else {
             gnameEl.textContent = pendG ? `…${pendG.replace(/_/g,' ')} (${pendN}/${CONFIRM})` : '';
