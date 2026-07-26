@@ -297,15 +297,15 @@
 
         /* ── Mobile Responsive Layout ── */
         @media (max-width: 768px) {
-            #ui { top: 12px; left: 12px; right: 12px; width: auto; }
-            .info-header-row { max-width: 100%; }
-            #info h1 { font-size: 17px; }
-            #info p { font-size: 9.5px; max-width: 100%; }
+            #ui { top: 12px; left: 12px; max-width: calc(100vw - 165px); pointer-events: none; }
+            .info-header-row { max-width: 100%; gap: 6px; }
+            #info h1 { font-size: 16px; letter-spacing: 0.8px; }
+            #info p { font-size: 9px; max-width: 100%; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
             .mobile-toggle-btn { display: inline-flex; }
 
             #controls {
-                width: 100%; max-width: 320px;
+                width: calc(100vw - 24px); max-width: 310px;
                 max-height: calc(100vh - 160px);
                 transition: max-height 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease, transform 0.25s ease;
             }
@@ -316,31 +316,34 @@
             }
 
             #nui {
-                top: auto; bottom: 64px; right: 12px;
-                width: 155px; padding: 10px;
+                top: 12px; right: 12px; bottom: auto;
+                width: 140px; padding: 8px;
             }
-            #nui h3 { font-size: 9.5px; }
-            #cam-wrap { width: 135px; height: 95px; }
-            .legend { font-size: 8.5px; line-height: 1.6; }
+            #nui h3 { font-size: 8.5px; letter-spacing: 1px; }
+            #cam-wrap { width: 122px; height: 84px; margin-bottom: 4px; }
+            .legend { font-size: 8px; line-height: 1.5; }
+            .legend .badge { width: 13px; height: 11px; font-size: 8px; margin-right: 2px; }
+            #gname { font-size: 8.5px; margin-top: 4px; min-height: 11px; }
 
             #bottom-hud {
-                bottom: 12px; padding: 6px 12px;
+                bottom: 12px; padding: 5px 12px;
+                border-radius: 20px;
             }
-            .hud-item { font-size: 9px; padding: 0 8px; }
-            .hud-help-btn { font-size: 9px; padding: 2px 8px; margin-left: 4px; }
+            .hud-item { font-size: 8.5px; padding: 0 6px; }
+            .hud-help-btn { font-size: 8.5px; padding: 2px 7px; margin-left: 4px; }
 
             /* Modal Mobile */
-            .modal-card { padding: 20px 16px; max-height: 85vh; overflow-y: auto; }
-            .modal-header h2 { font-size: 19px; }
-            .modal-header p { font-size: 11px; margin-bottom: 14px; }
-            .modal-grid { grid-template-columns: 1fr; gap: 8px; margin-bottom: 14px; }
-            .guide-card { padding: 10px; }
-            .card-icon { font-size: 16px; margin-bottom: 3px; }
-            .card-title { font-size: 11px; }
-            .card-desc { font-size: 10px; }
+            .modal-card { padding: 18px 14px; max-height: 88vh; overflow-y: auto; border-radius: 18px; }
+            .modal-header h2 { font-size: 18px; }
+            .modal-header p { font-size: 10.5px; margin-bottom: 12px; }
+            .modal-grid { grid-template-columns: 1fr; gap: 7px; margin-bottom: 12px; }
+            .guide-card { padding: 9px 10px; }
+            .card-icon { font-size: 15px; margin-bottom: 2px; }
+            .card-title { font-size: 10.5px; }
+            .card-desc { font-size: 9.5px; }
             .shortcut-row { display: none; }
-            .modal-footer { flex-direction: column; align-items: stretch; gap: 10px; }
-            .btn-launch { width: 100%; text-align: center; }
+            .modal-footer { flex-direction: column; align-items: stretch; gap: 8px; }
+            .btn-launch { width: 100%; text-align: center; font-size: 11px; }
         }
     </style>
 </head>
