@@ -1010,7 +1010,7 @@ const oefX = new OEF(30, 1.0, 0.05), oefY = new OEF(30, 1.0, 0.05);
 // ═══════════════════════════════════════════
 // 7. GESTURE TEMPORAL DEBOUNCE
 // ═══════════════════════════════════════════
-const CONFIRM = 4, GRACE = 6;
+const CONFIRM = 2, GRACE = 5;
 let pendG=null, pendN=0, confG=null, graceN=0;
 const gbarEl = document.getElementById('gbar');
 
@@ -1047,10 +1047,12 @@ const isPoint = lm => isFingerExtended(lm, 8, 6) && !isFingerExtended(lm, 12, 10
 // ═══════════════════════════════════════════
 // 8. MEDIAPIPE NEURAL LINK
 // ═══════════════════════════════════════════
-let recognizer=null, drawUtil=null, lastVT=-1, lastHX=-1, lastHY=-1, currentHandSize=0.25;
+let recognizer=null, drawUtil=null, lastVT=-1, lastHX=-1, lastHY=-1;
 const handWorldPos  = new THREE.Vector3();
 let handInfl = 0.0;
 let wantAutoRotate = true;
+let targetCameraRadius = 140;
+let isZoomingActive = false;
 
 const vidEl    = document.getElementById('webcam');
 const ocEl     = document.getElementById('oc');
@@ -1111,6 +1113,7 @@ function applyGesture(g, rx, ry, ts, hSize) {
 
     if (g === 'Pointing_Up') {
         wantAutoRotate = false;
+        isZoomingActive = false;
         scene.rotation.y += sdX * 3.8;
         scene.rotation.x  = Math.max(-Math.PI/2.6, Math.min(Math.PI/2.6, scene.rotation.x + sdY*2.8));
         handWorldPos.set((fx - 0.5)*scl*5.0, (0.5 - fy)*scl*3.5, 0);
@@ -1119,21 +1122,17 @@ function applyGesture(g, rx, ry, ts, hSize) {
         handInfl *= 0.9;
         if (g === 'Open_Palm') {
             wantAutoRotate = true;
-            // Map hand size (distance to webcam) & vertical position to smooth 3D camera zoom radius
+            isZoomingActive = true;
+            // Map hand size (distance to webcam) to target camera zoom radius
             const filteredSize = oefZoom.filter(hSize, ts*0.001);
-            const normSize = Math.max(0, Math.min(1, (filteredSize - 0.15) / 0.38));
-            const targetRadius = THREE.MathUtils.lerp(240, 35, normSize);
-
-            const currentRadius = camera.position.distanceTo(orbit.target);
-            const lerpedRadius  = THREE.MathUtils.lerp(currentRadius, targetRadius, 0.12);
-
-            const dir = camera.position.clone().sub(orbit.target).normalize();
-            if (dir.lengthSq() > 0.0001) {
-                camera.position.copy(orbit.target).addScaledVector(dir, lerpedRadius);
-            }
+            const normSize = Math.max(0, Math.min(1, (filteredSize - 0.14) / 0.36));
+            targetCameraRadius = THREE.MathUtils.lerp(250, 35, normSize);
         } else if (g === 'Victory') {
-            setSlider('chaos', Math.max(0, Math.min(2, uiV.chaos + sdX*6.0)));
             wantAutoRotate = true;
+            isZoomingActive = false;
+            setSlider('chaos', Math.max(0, Math.min(2, uiV.chaos + sdX*6.0)));
+        } else {
+            isZoomingActive = false;
         }
     }
     lastHX = fx; lastHY = fy;
@@ -1164,7 +1163,8 @@ function camLoop() {
         else if (isPalm(lm))  lG = 'Open_Palm';
 
         const ml = res.gestures[0]?.[0];
-        const raw = lG ?? (ml && ml.score > 0.82 ? ml.categoryName : null);
+        const mlGesture = (ml && ml.score > 0.70) ? ml.categoryName : null;
+        const raw = mlGesture ?? lG;
         const conf = updateGesture(raw);
         const hx = 1.0 - lm[0].x, hy = lm[0].y;
         const hSize = Math.hypot(lm[12].x - lm[0].x, lm[12].y - lm[0].y);
@@ -1258,6 +1258,16 @@ function animate() {
     setInfo(Math.min(3, Math.max(0, Math.round(uiV.shape))));
 
     stars.rotation.y = time * 0.009;
+
+    if (isZoomingActive || Math.abs(camera.position.distanceTo(orbit.target) - targetCameraRadius) > 0.5) {
+        const currentRadius = camera.position.distanceTo(orbit.target);
+        const lerpedRadius  = THREE.MathUtils.lerp(currentRadius, targetCameraRadius, 0.1);
+        const dir = camera.position.clone().sub(orbit.target).normalize();
+        if (dir.lengthSq() > 0.0001) {
+            camera.position.copy(orbit.target).addScaledVector(dir, lerpedRadius);
+        }
+    }
+
     orbit.update();
     composer.render();
 }
