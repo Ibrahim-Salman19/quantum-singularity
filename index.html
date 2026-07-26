@@ -4,248 +4,304 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quantum Singularity — Ultra GPU Edition</title>
+    <meta name="description" content="80,000 GPU-accelerated particles with AI hand gesture control, HDR bloom, and 4 dynamic topologies.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { overflow: hidden; background: #010108; color: #fff; font-family: 'Outfit', system-ui, sans-serif; }
         canvas { display: block; position: absolute; inset: 0; z-index: 1; }
 
-        /* Glassmorphic Panels */
+        /* ── Glass Panel Base ── */
         .glass-panel {
-            background: rgba(6, 9, 22, 0.72);
+            background: rgba(6, 9, 22, 0.75);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border: 1px solid rgba(0, 255, 204, 0.2);
+            border: 1px solid rgba(0, 255, 204, 0.18);
             border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.07);
         }
 
-        /* Top Left Header & Controls */
+        /* ── Left Panel ── */
         #ui { position: absolute; top: 20px; left: 20px; z-index: 100; pointer-events: none; }
         #info { margin-bottom: 12px; pointer-events: auto; }
-        .info-header-row { display: flex; align-items: center; justify-content: space-between; max-width: 275px; }
+        .info-header-row { display: flex; align-items: center; justify-content: space-between; max-width: 275px; gap: 10px; }
         #info h1 {
-            font-size: 22px; font-weight: 700; letter-spacing: 1.5px;
-            background: linear-gradient(135deg, #ffffff 0%, #00ffcc 50%, #8844ff 100%);
+            font-size: 20px; font-weight: 700; letter-spacing: 1.2px;
+            background: linear-gradient(135deg, #fff 0%, #00ffcc 50%, #8844ff 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            line-height: 1.2; text-transform: uppercase;
+            background-clip: text;
+            line-height: 1.2; text-transform: uppercase; flex-shrink: 1;
         }
-        #info p { font-size: 11px; color: #94a3b8; max-width: 320px; line-height: 1.45; margin-top: 4px; font-weight: 400; }
+        #info p {
+            font-size: 10.5px; color: #94a3b8; max-width: 275px;
+            line-height: 1.45; margin-top: 5px; font-weight: 400;
+        }
 
         .help-badge-btn {
-            background: rgba(0, 255, 204, 0.12);
-            border: 1px solid rgba(0, 255, 204, 0.35);
-            color: #00ffcc; font-family: inherit; font-size: 10.5px; font-weight: 600;
+            flex-shrink: 0;
+            background: rgba(0,255,204,0.1); border: 1px solid rgba(0,255,204,0.3);
+            color: #00ffcc; font-family: inherit; font-size: 10px; font-weight: 600;
             padding: 4px 10px; border-radius: 20px; cursor: pointer;
-            transition: all 0.2s ease; backdrop-filter: blur(8px);
-            box-shadow: 0 0 12px rgba(0, 255, 204, 0.15);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+            box-shadow: 0 0 10px rgba(0,255,204,0.1); white-space: nowrap;
         }
         .help-badge-btn:hover {
-            background: rgba(0, 255, 204, 0.25); border-color: #00ffcc;
-            transform: translateY(-1px); box-shadow: 0 0 18px rgba(0, 255, 204, 0.4);
+            background: rgba(0,255,204,0.22); border-color: #00ffcc;
+            transform: translateY(-1px); box-shadow: 0 0 16px rgba(0,255,204,0.4);
         }
 
         #controls {
-            pointer-events: auto; display: flex; flex-direction: column; gap: 8px;
-            padding: 16px; width: 275px; max-height: calc(100vh - 120px); overflow-y: auto;
-            scrollbar-width: thin; scrollbar-color: rgba(0,255,204,0.3) transparent;
+            pointer-events: auto; display: flex; flex-direction: column; gap: 7px;
+            padding: 15px; width: 275px;
+            max-height: calc(100vh - 118px); overflow-y: auto; overflow-x: hidden;
+            scrollbar-width: thin; scrollbar-color: rgba(0,255,204,0.25) transparent;
         }
-        #controls::-webkit-scrollbar { width: 4px; }
-        #controls::-webkit-scrollbar-thumb { background: rgba(0,255,204,0.3); border-radius: 4px; }
+        #controls::-webkit-scrollbar { width: 3px; }
+        #controls::-webkit-scrollbar-thumb { background: rgba(0,255,204,0.25); border-radius: 3px; }
 
-        .section-label { font-size: 9.5px; color: rgba(0,255,204,0.7); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; padding: 2px 0 1px; }
-        .section-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(0,255,204,0.25), transparent); margin: 3px 0; }
-        
+        .section-label {
+            font-size: 9px; color: rgba(0,255,204,0.65);
+            text-transform: uppercase; letter-spacing: 2.2px; font-weight: 700; padding: 1px 0;
+        }
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,255,204,0.2), transparent);
+            margin: 1px 0;
+        }
         .cg { display: flex; flex-direction: column; gap: 3px; }
-        .cg label { font-size: 10.5px; display: flex; justify-content: space-between; align-items: center; color: #94a3b8; font-weight: 500; }
-        .cg label .val { color: #00ffcc; font-family: 'JetBrains Mono', monospace; font-size: 10px; background: rgba(0,255,204,0.08); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(0,255,204,0.15); }
-        
-        input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; outline: none; cursor: pointer; }
+        .cg label {
+            font-size: 10px; display: flex; justify-content: space-between;
+            align-items: center; color: #94a3b8; font-weight: 500; user-select: none;
+        }
+        .cg label .val {
+            color: #00ffcc; font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+            background: rgba(0,255,204,0.07); padding: 1px 5px; border-radius: 4px;
+            border: 1px solid rgba(0,255,204,0.12); min-width: 36px; text-align: right;
+        }
+        input[type=range] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 3px; background: rgba(255,255,255,0.1);
+            border-radius: 2px; outline: none; cursor: pointer;
+        }
         input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 13px; height: 13px;
-            background: radial-gradient(circle, #00ffcc 30%, #006644 100%);
+            -webkit-appearance: none; width: 12px; height: 12px;
+            background: radial-gradient(circle, #00ffcc 30%, #005533 100%);
             border-radius: 50%; cursor: pointer;
-            box-shadow: 0 0 10px rgba(0,255,204,0.6);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 0 8px rgba(0,255,204,0.55);
+            transition: transform 0.15s, box-shadow 0.15s;
         }
-        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.35); box-shadow: 0 0 16px rgba(0,255,204,0.9); }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.4); box-shadow: 0 0 14px rgba(0,255,204,0.85);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 12px; height: 12px; border: none;
+            background: radial-gradient(circle, #00ffcc 30%, #005533 100%);
+            border-radius: 50%; cursor: pointer;
+            box-shadow: 0 0 8px rgba(0,255,204,0.55);
+        }
 
-        /* Topology Buttons Grid */
-        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 2px; }
+        /* Topology Buttons */
+        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
         .btn-preset {
-            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
-            color: #cbd5e1; font-family: inherit; font-size: 10px; font-weight: 500;
-            padding: 7px 4px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
-            text-align: center;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+            color: #94a3b8; font-family: inherit; font-size: 9.5px; font-weight: 500;
+            padding: 6px 4px; border-radius: 8px; cursor: pointer;
+            transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.15s;
+            text-align: center; user-select: none;
         }
-        .btn-preset:hover { background: rgba(0,255,204,0.12); border-color: rgba(0,255,204,0.4); color: #fff; transform: translateY(-1px); }
-        .btn-preset.active { background: rgba(0,255,204,0.2); border-color: #00ffcc; color: #00ffcc; font-weight: 700; box-shadow: 0 0 12px rgba(0,255,204,0.3); }
+        .btn-preset:hover { background: rgba(0,255,204,0.1); border-color: rgba(0,255,204,0.35); color: #e2e8f0; transform: translateY(-1px); }
+        .btn-preset.active { background: rgba(0,255,204,0.18); border-color: rgba(0,255,204,0.7); color: #00ffcc; font-weight: 700; box-shadow: 0 0 10px rgba(0,255,204,0.25); }
 
-        /* Swatches */
-        .palette-swatches { display: flex; gap: 6px; margin-top: 2px; }
+        /* Color Swatches */
+        .palette-swatches { display: flex; gap: 5px; }
         .swatch {
-            flex: 1; height: 18px; border-radius: 5px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);
-            transition: transform 0.15s, border-color 0.15s;
+            flex: 1; height: 16px; border-radius: 5px; cursor: pointer;
+            border: 1.5px solid rgba(255,255,255,0.18);
+            transition: transform 0.14s, border-color 0.14s, box-shadow 0.14s;
         }
-        .swatch:hover { transform: scale(1.08); border-color: #fff; }
-        .swatch.active { border-color: #00ffcc; box-shadow: 0 0 10px #00ffcc; transform: scale(1.08); }
+        .swatch:hover { transform: scaleY(1.25); border-color: rgba(255,255,255,0.6); }
+        .swatch.active { border-color: #00ffcc; box-shadow: 0 0 8px rgba(0,255,204,0.6); transform: scaleY(1.25); }
 
-        /* Neural HUD */
+        /* ── Neural HUD ── */
         #nui {
             position: absolute; top: 20px; right: 20px; z-index: 100;
-            padding: 14px; text-align: center; width: 210px;
+            padding: 13px; text-align: center; width: 205px;
         }
-        #nui-header { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
-        #nui-dot { width: 7px; height: 7px; border-radius: 50%; background: #00ffcc; box-shadow: 0 0 10px #00ffcc; animation: blink 1.8s ease-in-out infinite; }
-        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-        #nui h3 { color: #00ffcc; font-size: 11px; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; }
-        #nstatus { font-size: 10.5px; color: #f59e0b; margin-bottom: 8px; min-height: 14px; font-weight: 500; }
-        #cam-wrap { position: relative; width: 175px; height: 125px; margin: 0 auto 8px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,255,204,.25); }
+        #nui-header { display: flex; align-items: center; justify-content: center; gap: 7px; margin-bottom: 7px; }
+        #nui-dot { width: 6px; height: 6px; border-radius: 50%; background: #00ffcc; box-shadow: 0 0 8px #00ffcc; animation: blink 1.8s ease-in-out infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+        #nui h3 { color: #00ffcc; font-size: 10.5px; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; }
+        #nstatus { font-size: 10px; margin-bottom: 7px; min-height: 13px; font-weight: 500; transition: color 0.4s; }
+        #cam-wrap {
+            position: relative; width: 175px; height: 124px;
+            margin: 0 auto 8px; border-radius: 11px; overflow: hidden;
+            border: 1px solid rgba(0,255,204,0.22);
+            background: rgba(0,0,0,0.4);
+        }
         #webcam { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         #oc { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; transform: scaleX(-1); pointer-events: none; }
-        .legend { font-size: 10px; color: #94a3b8; text-align: left; line-height: 1.8; }
+        .legend { font-size: 9.5px; color: #94a3b8; text-align: left; line-height: 1.85; }
         .legend b { color: #00ffcc; }
-        .legend .badge { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 14px; background: rgba(0,255,204,0.12); border: 1px solid rgba(0,255,204,0.3); border-radius: 3px; font-size: 10px; margin-right: 4px; }
-        #gname { margin-top: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; color: #fff; min-height: 14px; font-family: 'JetBrains Mono', monospace; }
-        #gbar-wrap { height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; margin-top: 6px; overflow: hidden; }
-        #gbar { height: 100%; width: 0%; background: linear-gradient(90deg, #00ffcc, #3b82f6); transition: width .1s ease-out; }
+        .legend .badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 15px; height: 13px; background: rgba(0,255,204,0.1);
+            border: 1px solid rgba(0,255,204,0.28); border-radius: 3px;
+            font-size: 9px; margin-right: 4px;
+        }
+        #gname { margin-top: 6px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #fff; min-height: 13px; font-family: 'JetBrains Mono', monospace; }
+        #gbar-wrap { height: 2px; background: rgba(255,255,255,.07); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+        #gbar { height: 100%; width: 0%; background: linear-gradient(90deg, #00ffcc, #3b82f6); transition: width .08s linear; }
 
-        /* Bottom HUD */
+        /* ── Bottom HUD ── */
         #bottom-hud {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; align-items: center; gap: 16px;
-            padding: 8px 24px; border-radius: 30px; z-index: 100;
+            display: flex; align-items: center; gap: 0;
+            padding: 7px 20px; border-radius: 30px; z-index: 100; white-space: nowrap;
         }
-        .hud-item { font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 600; }
-        #hud-mode { color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.4); }
-        #hud-particles { color: #94a3b8; border-left: 1px solid rgba(255,255,255,0.12); padding-left: 16px; font-family: 'JetBrains Mono', monospace; }
-        #hud-fps { color: #10b981; border-left: 1px solid rgba(255,255,255,0.12); padding-left: 16px; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
-        .hud-btn-trigger {
-            background: rgba(0, 255, 204, 0.12); border: 1px solid rgba(0, 255, 204, 0.3);
-            color: #00ffcc; font-family: 'Outfit', sans-serif; font-size: 10.5px; font-weight: 600;
-            padding: 3px 12px; border-radius: 14px; cursor: pointer;
-            border-left: 1px solid rgba(255,255,255,0.12); margin-left: 4px;
-            transition: all 0.2s ease;
+        .hud-item { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; padding: 0 14px; }
+        .hud-item + .hud-item { border-left: 1px solid rgba(255,255,255,0.1); }
+        #hud-mode { color: #00ffcc; text-shadow: 0 0 8px rgba(0,255,204,0.35); }
+        #hud-particles { color: #64748b; font-family: 'JetBrains Mono', monospace; }
+        #hud-fps { font-family: 'JetBrains Mono', monospace; font-weight: 700; transition: color 0.5s; }
+        .hud-sep { width: 1px; height: 14px; background: rgba(255,255,255,0.1); }
+        .hud-help-btn {
+            background: rgba(0,255,204,0.1); border: 1px solid rgba(0,255,204,0.28);
+            color: #00ffcc; font-family: inherit; font-size: 10px; font-weight: 600;
+            padding: 3px 12px; border-radius: 14px; cursor: pointer; margin-left: 10px;
+            transition: background 0.2s, box-shadow 0.2s;
         }
-        .hud-btn-trigger:hover {
-            background: rgba(0, 255, 204, 0.25); border-color: #00ffcc;
-            box-shadow: 0 0 14px rgba(0, 255, 204, 0.4);
-        }
+        .hud-help-btn:hover { background: rgba(0,255,204,0.22); box-shadow: 0 0 12px rgba(0,255,204,0.35); }
 
-        /* Pulse ring */
+        /* ── Gesture Pulse Ring ── */
         #gesture-ring {
-            position: fixed; top: 50%; left: 50%; width: 0; height: 0; border-radius: 50%;
-            pointer-events: none; z-index: 500; transform: translate(-50%, -50%);
+            position: fixed; top: 50%; left: 50%;
+            width: 0; height: 0; border-radius: 50%;
+            pointer-events: none; z-index: 500;
+            transform: translate(-50%, -50%);
         }
-        #gesture-ring.active { animation: ring-pulse 0.6s cubic-bezier(0.2,0.8,0.4,1) forwards; }
+        #gesture-ring.active { animation: ring-pulse 0.65s cubic-bezier(0.2,0.8,0.4,1) forwards; }
         @keyframes ring-pulse {
-            0% { box-shadow: 0 0 0 0px rgba(0,255,204,0.8); }
-            100% { box-shadow: 0 0 0 100px rgba(0,255,204,0); }
+            0%   { box-shadow: 0 0 0 0px rgba(0,255,204,0.75); }
+            100% { box-shadow: 0 0 0 90px rgba(0,255,204,0); }
         }
 
-        /* --- Help Modal --- */
+        /* ── Help / Guide Modal ── */
         .modal-overlay {
             position: fixed; inset: 0; z-index: 2000;
-            background: rgba(1, 1, 8, 0.78);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            background: rgba(1,1,8,0.72);
+            backdrop-filter: blur(18px) saturate(160%);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
             display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.35s ease;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
             padding: 20px;
         }
         .modal-overlay.visible { opacity: 1; pointer-events: auto; }
 
         .modal-card {
-            position: relative; width: 100%; max-width: 560px;
-            padding: 28px 30px; background: rgba(6, 9, 24, 0.88);
-            border: 1px solid rgba(0, 255, 204, 0.35);
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 255, 204, 0.18);
-            transform: scale(0.92) translateY(10px);
-            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative; width: 100%; max-width: 540px;
+            padding: 26px 28px 22px;
+            background: rgba(6,9,24,0.92);
+            border: 1px solid rgba(0,255,204,0.3);
+            border-radius: 22px;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.9), 0 0 30px rgba(0,255,204,0.14);
+            transform: scale(0.93) translateY(12px);
+            transition: transform 0.32s cubic-bezier(0.16,1,0.3,1), opacity 0.32s ease;
+            opacity: 0;
         }
-        .modal-overlay.visible .modal-card { transform: scale(1) translateY(0); }
+        .modal-overlay.visible .modal-card { transform: scale(1) translateY(0); opacity: 1; }
 
         .modal-close {
-            position: absolute; top: 18px; right: 18px;
-            background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #94a3b8; width: 32px; height: 32px; border-radius: 50%;
-            font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s ease;
+            position: absolute; top: 16px; right: 16px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+            color: #94a3b8; width: 30px; height: 30px; border-radius: 50%;
+            font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.25s;
         }
-        .modal-close:hover {
-            background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #fff;
-            transform: rotate(90deg);
-        }
+        .modal-close:hover { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.5); color: #f87171; transform: rotate(90deg); }
 
-        .modal-badge {
-            display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: 2px;
-            text-transform: uppercase; color: #00ffcc; background: rgba(0, 255, 204, 0.1);
-            padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(0, 255, 204, 0.25);
+        .modal-eyebrow {
+            display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 2.2px;
+            text-transform: uppercase; color: #00ffcc; background: rgba(0,255,204,0.08);
+            padding: 3px 10px; border-radius: 10px; border: 1px solid rgba(0,255,204,0.22);
             margin-bottom: 8px;
         }
-
         .modal-header h2 {
-            font-size: 24px; font-weight: 700; letter-spacing: 1px;
-            background: linear-gradient(135deg, #ffffff 0%, #00ffcc 50%, #8844ff 100%);
+            font-size: 22px; font-weight: 700; letter-spacing: 0.8px;
+            background: linear-gradient(135deg, #fff 0%, #00ffcc 48%, #8844ff 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 6px;
+            background-clip: text; margin-bottom: 5px;
         }
-        .modal-header p { font-size: 12.5px; color: #94a3b8; line-height: 1.5; margin-bottom: 20px; }
+        .modal-header p { font-size: 12px; color: #94a3b8; line-height: 1.55; margin-bottom: 18px; }
 
-        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
 
         .guide-card {
-            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px; padding: 14px; transition: all 0.25s ease;
+            background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 13px; padding: 13px 12px;
+            transition: background 0.22s, border-color 0.22s, transform 0.2s;
+            cursor: default;
         }
-        .guide-card:hover {
-            background: rgba(0, 255, 204, 0.06); border-color: rgba(0, 255, 204, 0.3);
-            transform: translateY(-2px);
-        }
+        .guide-card:hover { background: rgba(0,255,204,0.05); border-color: rgba(0,255,204,0.25); transform: translateY(-2px); }
 
-        .card-icon { font-size: 20px; margin-bottom: 6px; }
-        .card-title { font-size: 12px; font-weight: 700; color: #00ffcc; margin-bottom: 3px; letter-spacing: 0.5px; }
-        .card-desc { font-size: 11px; color: #cbd5e1; line-height: 1.4; }
+        .card-icon { font-size: 19px; margin-bottom: 5px; line-height: 1; }
+        .card-title { font-size: 11.5px; font-weight: 700; color: #00ffcc; margin-bottom: 3px; letter-spacing: 0.3px; }
+        .card-desc { font-size: 10.5px; color: #cbd5e1; line-height: 1.45; }
+
+        .modal-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); margin-bottom: 16px; }
+
+        .shortcut-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+        .shortcut-chip {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 10px; color: #64748b;
+        }
+        .kbd {
+            background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 4px; padding: 1px 5px; font-family: 'JetBrains Mono', monospace;
+            font-size: 9px; color: #94a3b8;
+        }
 
         .modal-footer {
-            display: flex; align-items: center; justify-content: space-between;
-            padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
         }
-
         .modal-checkbox-lbl {
-            font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 6px; cursor: pointer;
+            font-size: 10.5px; color: #64748b; display: flex; align-items: center; gap: 6px; cursor: pointer;
+            transition: color 0.15s;
         }
+        .modal-checkbox-lbl:hover { color: #94a3b8; }
         .modal-checkbox-lbl input { accent-color: #00ffcc; cursor: pointer; }
 
         .btn-launch {
             background: linear-gradient(135deg, #00ffcc 0%, #0077ff 100%);
-            color: #02020a; font-family: inherit; font-size: 12px; font-weight: 700;
-            letter-spacing: 0.5px; padding: 10px 22px; border-radius: 12px; border: none;
-            cursor: pointer; box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
-            transition: all 0.2s ease;
+            color: #020b08; font-family: inherit; font-size: 11.5px; font-weight: 700;
+            letter-spacing: 0.3px; padding: 9px 20px; border-radius: 11px; border: none;
+            cursor: pointer; box-shadow: 0 0 18px rgba(0,255,204,0.35);
+            transition: transform 0.18s, box-shadow 0.18s; white-space: nowrap;
         }
-        .btn-launch:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(0, 255, 204, 0.7); }
+        .btn-launch:hover { transform: scale(1.04); box-shadow: 0 0 28px rgba(0,255,204,0.65); }
+        .btn-launch:active { transform: scale(0.97); }
     </style>
 </head>
 <body>
 
-<!-- Left Panel -->
+<!-- ── Left Panel ── -->
 <div id="ui">
     <div id="info">
         <div class="info-header-row">
             <h1 id="info-title">Quantum Singularity</h1>
-            <button id="help-btn" class="help-badge-btn" title="Open Interactive Guide">❓ Guide</button>
+            <button id="help-btn" class="help-badge-btn" title="Open Guide (H)">❓ Guide</button>
         </div>
         <p id="info-desc">80,000 GPU Particles · HDR Bloom · 60+ FPS · Neural Link</p>
     </div>
     <div id="controls" class="glass-panel">
         <div class="section-label">Topology Presets</div>
         <div class="grid-buttons">
-            <button class="btn-preset active" data-shape="0">Singularity</button>
-            <button class="btn-preset" data-shape="1">Lotus</button>
-            <button class="btn-preset" data-shape="2">Tesseract</button>
-            <button class="btn-preset" data-shape="3">Attractor</button>
+            <button class="btn-preset active" data-shape="0">⬤ Singularity</button>
+            <button class="btn-preset" data-shape="1">✿ Lotus</button>
+            <button class="btn-preset" data-shape="2">◈ Tesseract</button>
+            <button class="btn-preset" data-shape="3">∿ Attractor</button>
         </div>
         <div class="cg" id="cg-shape"></div>
 
@@ -258,93 +314,104 @@
         <div class="cg" id="cg-speed"></div>
 
         <div class="section-divider"></div>
-        <div class="section-label">Visual Themes</div>
-        <div class="palette-swatches">
-            <div class="swatch active" data-pal="0" style="background: linear-gradient(90deg, #00ffcc, #0044ff);"></div>
-            <div class="swatch" data-pal="1" style="background: linear-gradient(90deg, #ff0055, #ffaa00);"></div>
-            <div class="swatch" data-pal="2" style="background: linear-gradient(90deg, #d000ff, #00ffff);"></div>
-            <div class="swatch" data-pal="3" style="background: linear-gradient(90deg, #00ff66, #00ffff);"></div>
-            <div class="swatch" data-pal="4" style="background: linear-gradient(90deg, #ff3300, #9900ff);"></div>
+        <div class="section-label">Visuals</div>
+        <div class="palette-swatches" id="palette-swatches">
+            <div class="swatch active" data-pal="0" style="background:linear-gradient(90deg,#00ffcc,#0044ff)" title="Deep Space Teal"></div>
+            <div class="swatch" data-pal="1" style="background:linear-gradient(90deg,#ff0055,#ffaa00)" title="Solar Supernova"></div>
+            <div class="swatch" data-pal="2" style="background:linear-gradient(90deg,#cc00ff,#00ffff)" title="Cyberpunk Magenta"></div>
+            <div class="swatch" data-pal="3" style="background:linear-gradient(90deg,#00ff66,#00ccff)" title="Aurora Borealis"></div>
+            <div class="swatch" data-pal="4" style="background:linear-gradient(90deg,#ff4400,#9900ff)" title="Full Spectrum"></div>
         </div>
         <div class="cg" id="cg-psize"></div>
         <div class="cg" id="cg-bloom"></div>
     </div>
 </div>
 
-<!-- Neural Link HUD -->
+<!-- ── Neural Link HUD ── -->
 <div id="nui" class="glass-panel">
     <div id="nui-header"><div id="nui-dot"></div><h3>Neural Link v3</h3></div>
-    <p id="nstatus">Initialising AI…</p>
+    <p id="nstatus" style="color:#f59e0b">Initialising AI…</p>
     <div id="cam-wrap">
         <video id="webcam" autoplay playsinline muted></video>
-        <canvas id="oc" width="175" height="125"></canvas>
+        <canvas id="oc" width="175" height="124"></canvas>
     </div>
     <div class="legend">
-        <div><span class="badge">☝</span><b>Point</b> → Interactive Field</div>
+        <div><span class="badge">☝</span><b>Point</b> → Particle Attractor</div>
         <div><span class="badge">✋</span><b>Palm</b> → Camera Zoom</div>
-        <div><span class="badge">✌</span><b>Peace</b> → Morph Chaos</div>
+        <div><span class="badge">✌</span><b>Peace</b> → Curl Chaos</div>
     </div>
     <div id="gname"></div>
     <div id="gbar-wrap"><div id="gbar"></div></div>
 </div>
 
-<!-- Bottom HUD -->
+<!-- ── Bottom HUD ── -->
 <div id="bottom-hud" class="glass-panel">
     <div class="hud-item" id="hud-mode">GPU Accelerated</div>
-    <div class="hud-item" id="hud-particles">80,000 PTS</div>
-    <div class="hud-item" id="hud-fps">FPS: 60</div>
-    <button id="hud-help-btn" class="hud-btn-trigger">❓ Help</button>
+    <div class="hud-item" id="hud-particles">80K PTS</div>
+    <div class="hud-item" id="hud-fps">FPS: —</div>
+    <button id="hud-help-btn" class="hud-help-btn" title="Open Guide (H)">❓ Help</button>
 </div>
 
+<!-- ── Gesture Pulse ── -->
 <div id="gesture-ring"></div>
 
-<!-- Interactive Guide Modal -->
-<div id="guide-modal-overlay" class="modal-overlay">
-    <div id="guide-modal" class="glass-panel modal-card">
-        <button id="modal-close-btn" class="modal-close" title="Close Guide">✕</button>
+<!-- ── Guide Modal ── -->
+<div id="guide-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-label="Quick Guide">
+    <div class="modal-card glass-panel" id="guide-card">
+        <button id="modal-close" class="modal-close" title="Close (Esc)">✕</button>
+
         <div class="modal-header">
-            <div class="modal-badge">Interactive WebGL Experience</div>
+            <div class="modal-eyebrow">Interactive WebGL Experience</div>
             <h2>Quantum Singularity</h2>
-            <p>Explore 80,000 GPU-accelerated particles driven by MediaPipe AI Hand Gestures & Spacetime Physics.</p>
+            <p>80,000 GPU particles driven by AI hand gestures &amp; spacetime physics. Runs at 60+ FPS — zero CPU overhead.</p>
         </div>
 
         <div class="modal-grid">
             <div class="guide-card">
                 <div class="card-icon">☝️</div>
-                <div class="card-title">1 Finger Attractor</div>
-                <div class="card-desc">Point your index finger at the camera to warp & bend the 3D particle field.</div>
+                <div class="card-title">Point → Attractor</div>
+                <div class="card-desc">Index finger pointing warps the 3D particle field around your hand position.</div>
             </div>
             <div class="guide-card">
                 <div class="card-icon">✋</div>
-                <div class="card-title">Palm Camera Zoom</div>
-                <div class="card-desc">Move open palm left or right to zoom camera position in and out smoothly.</div>
+                <div class="card-title">Palm → Zoom</div>
+                <div class="card-desc">Move open palm left or right to smoothly zoom the camera in and out.</div>
             </div>
             <div class="guide-card">
                 <div class="card-icon">✌️</div>
-                <div class="card-title">Peace Sign Turbulence</div>
-                <div class="card-desc">Show a peace/victory sign to trigger divergence-free quantum curl turbulence.</div>
+                <div class="card-title">Peace → Turbulence</div>
+                <div class="card-desc">Victory sign injects divergence-free curl turbulence into spacetime.</div>
             </div>
             <div class="guide-card">
                 <div class="card-icon">🖱️</div>
-                <div class="card-title">Mouse & Controls</div>
-                <div class="card-desc">No webcam? Hover your mouse to pull particles! Use presets to switch 4 topologies & color themes.</div>
+                <div class="card-title">Mouse → Field</div>
+                <div class="card-desc">No webcam? Hover your mouse over the canvas to attract particles.</div>
             </div>
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <div class="shortcut-row">
+            <div class="shortcut-chip"><span class="kbd">H</span> Toggle guide</div>
+            <div class="shortcut-chip"><span class="kbd">R</span> Reset sliders</div>
+            <div class="shortcut-chip"><span class="kbd">Space</span> Pause / Resume</div>
+            <div class="shortcut-chip"><span class="kbd">Esc</span> Close modal</div>
         </div>
 
         <div class="modal-footer">
             <label class="modal-checkbox-lbl">
-                <input type="checkbox" id="dont-show-again"> Don't show this popup on startup
+                <input type="checkbox" id="dont-show-again"> Don't show on startup
             </label>
-            <button id="modal-start-btn" class="btn-launch">Launch Experience 🚀</button>
+            <button id="modal-launch" class="btn-launch">Launch Experience 🚀</button>
         </div>
     </div>
 </div>
 
 <script type="importmap">
-{ "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-} }
+{"imports":{
+    "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
 </script>
 
 <script type="module">
@@ -356,57 +423,64 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass }      from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass }      from 'three/addons/postprocessing/OutputPass.js';
 import { GestureRecognizer, FilesetResolver, DrawingUtils }
-    from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.mjs";
+    from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.mjs';
 
-// ══════════════════════════════════════════════════════════
-// 0. GUIDE MODAL & USER HELP SYSTEM
-// ══════════════════════════════════════════════════════════
-const guideOverlay = document.getElementById('guide-modal-overlay');
-const closeBtn     = document.getElementById('modal-close-btn');
-const startBtn     = document.getElementById('modal-start-btn');
-const helpBtn      = document.getElementById('help-btn');
-const hudHelpBtn   = document.getElementById('hud-help-btn');
-const dontShowCb   = document.getElementById('dont-show-again');
+// ═══════════════════════════════════════════
+// 0. GUIDE MODAL — first-visit + re-openable
+// ═══════════════════════════════════════════
+const guideOverlay  = document.getElementById('guide-overlay');
+const modalClose    = document.getElementById('modal-close');
+const modalLaunch   = document.getElementById('modal-launch');
+const helpBtn       = document.getElementById('help-btn');
+const hudHelpBtn    = document.getElementById('hud-help-btn');
+const dontShowCb    = document.getElementById('dont-show-again');
+const STORAGE_KEY   = 'qs_guide_dismissed_v3';
+
+let isGuideOpen = false;
 
 function openGuide() {
+    if (isGuideOpen) return;
+    isGuideOpen = true;
     guideOverlay.classList.add('visible');
+    modalClose.focus();
 }
 
 function closeGuide() {
+    if (!isGuideOpen) return;
+    isGuideOpen = false;
     guideOverlay.classList.remove('visible');
-    if (dontShowCb && dontShowCb.checked) {
-        localStorage.setItem('qs_hide_guide', 'true');
-    }
+    if (dontShowCb.checked) localStorage.setItem(STORAGE_KEY, '1');
 }
 
-// Auto open on first visit
-if (!localStorage.getItem('qs_hide_guide')) {
-    setTimeout(openGuide, 400);
+// Auto-open on first visit (after particles load)
+if (!localStorage.getItem(STORAGE_KEY)) {
+    setTimeout(openGuide, 600);
 }
 
-closeBtn?.addEventListener('click', closeGuide);
-startBtn?.addEventListener('click', closeGuide);
-helpBtn?.addEventListener('click', openGuide);
-hudHelpBtn?.addEventListener('click', openGuide);
+modalClose.addEventListener('click', closeGuide);
+modalLaunch.addEventListener('click', closeGuide);
+helpBtn.addEventListener('click', openGuide);
+hudHelpBtn.addEventListener('click', openGuide);
 
-guideOverlay?.addEventListener('click', (e) => {
+// Close on overlay background click
+guideOverlay.addEventListener('pointerdown', (e) => {
     if (e.target === guideOverlay) closeGuide();
 });
 
-// ══════════════════════════════════════════════════════════
-// 1. RENDERER + SCENE SETUP
-// ══════════════════════════════════════════════════════════
-const scene    = new THREE.Scene();
-scene.fog      = new THREE.FogExp2(0x010108, 0.0015);
+// ═══════════════════════════════════════════
+// 1. RENDERER + SCENE
+// ═══════════════════════════════════════════
+const scene  = new THREE.Scene();
+scene.fog    = new THREE.FogExp2(0x010108, 0.0014);
 
-const camera   = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 2000);
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.5, 2000);
 camera.position.set(0, 45, 140);
 
 const renderer = new THREE.WebGLRenderer({
     antialias: false,
     powerPreference: 'high-performance',
     stencil: false,
-    depth: true
+    depth: false       // Particles use AdditiveBlending — no depth test needed; saves VRAM
 });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -416,37 +490,38 @@ document.body.appendChild(renderer.domElement);
 
 const orbit = new OrbitControls(camera, renderer.domElement);
 orbit.enableDamping = true;
-orbit.dampingFactor = 0.055;
-orbit.autoRotate = true;
-orbit.autoRotateSpeed = 0.32;
-orbit.minDistance = 18;
-orbit.maxDistance = 420;
+orbit.dampingFactor  = 0.055;
+orbit.autoRotate     = true;
+orbit.autoRotateSpeed = 0.3;
+orbit.minDistance    = 18;
+orbit.maxDistance    = 420;
+orbit.enablePan      = false;   // Pan disabled — no useful interaction, prevents accidental drift
 
-// ══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // 2. HDR POST-PROCESSING PIPELINE
-// ══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
 const hdrTarget = new THREE.WebGLRenderTarget(innerWidth, innerHeight, {
-    type: THREE.HalfFloatType,
-    format: THREE.RGBAFormat
+    type: THREE.HalfFloatType
 });
 const composer = new EffectComposer(renderer, hdrTarget);
 composer.addPass(new RenderPass(scene, camera));
 
 const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(Math.floor(innerWidth * 0.5), Math.floor(innerHeight * 0.5)),
-    0.95, // strength
-    0.35, // radius
-    0.88  // threshold
+    0.95,   // strength
+    0.35,   // radius
+    0.88    // threshold — only jet cores & bright centres bloom
 );
 composer.addPass(bloomPass);
 
+// Combined cinematic pass: chromatic aberration + vignette + film grain (single draw call)
 const CinematicShader = {
     uniforms: {
         tDiffuse: { value: null },
         uTime:    { value: 0 },
-        uCA:      { value: 0.0035 },
-        uVig:     { value: 0.55 },
-        uGrain:   { value: 0.02 }
+        uCA:      { value: 0.003 },
+        uVig:     { value: 0.52 },
+        uGrain:   { value: 0.018 }
     },
     vertexShader: `
         varying vec2 vUv;
@@ -454,31 +529,21 @@ const CinematicShader = {
     `,
     fragmentShader: `
         uniform sampler2D tDiffuse;
-        uniform float uTime;
-        uniform float uCA;
-        uniform float uVig;
-        uniform float uGrain;
+        uniform float uTime, uCA, uVig, uGrain;
         varying vec2 vUv;
-
         void main() {
-            vec2 center = vUv - 0.5;
-            float dist = length(center);
-
-            float ca = uCA * dist * dist * 3.5;
-            vec2 rOffset = dist > 0.001 ? (center / dist) * ca : vec2(0.0);
-            float r = texture2D(tDiffuse, vUv + rOffset).r;
+            vec2 c = vUv - 0.5;
+            float d = length(c);
+            float ca = uCA * d * d * 4.0;
+            vec2 dir = d > 0.001 ? normalize(c) * ca : vec2(0.0);
+            float r = texture2D(tDiffuse, vUv + dir).r;
             float g = texture2D(tDiffuse, vUv).g;
-            float b = texture2D(tDiffuse, vUv - rOffset).b;
-            vec3 color = vec3(r, g, b);
-
-            float vignette = 1.0 - smoothstep(0.3, 0.85, dist * uVig);
-            color *= vignette;
-
-            float seed = dot(vUv, vec2(12.9898, 78.233)) + uTime * 0.001;
-            float grain = fract(sin(seed) * 43758.5453) - 0.5;
-            color += grain * uGrain;
-
-            gl_FragColor = vec4(max(color, vec3(0.0)), 1.0);
+            float b = texture2D(tDiffuse, vUv - dir).b;
+            vec3 col = vec3(r, g, b);
+            col *= 1.0 - smoothstep(0.28, 0.82, d * uVig);
+            float seed = dot(vUv, vec2(12.9898, 78.233)) + uTime * 0.0007;
+            col += (fract(sin(seed) * 43758.5453) - 0.5) * uGrain;
+            gl_FragColor = vec4(max(col, vec3(0.0)), 1.0);
         }
     `
 };
@@ -486,30 +551,208 @@ const cinPass = new ShaderPass(CinematicShader);
 composer.addPass(cinPass);
 composer.addPass(new OutputPass());
 
-// ══════════════════════════════════════════════════════════
-// 3. ULTRA HIGH-PERFORMANCE GPU PARTICLE SYSTEM (80,000 PTS)
-// ══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════
+// 3. FULL-GPU PARTICLE SYSTEM — 80 000 PTS
+//    0 CPU vertex work. All math in GLSL.
+// ═══════════════════════════════════════════
 const N = 80000;
 const geo = new THREE.BufferGeometry();
-const posArr = new Float32Array(N * 3);
+
+// Only two static attributes uploaded once — never updated per frame
 const aIdxArr = new Float32Array(N);
 const aSdArr  = new Float32Array(N);
+for (let i = 0; i < N; i++) { aIdxArr[i] = i / N; aSdArr[i] = Math.random(); }
 
-for (let i = 0; i < N; i++) {
-    aIdxArr[i] = i / N;
-    aSdArr[i]  = Math.random();
-}
-
+// Dummy position array — actual positions are computed in vertex shader
+const posArr = new Float32Array(N * 3);
 geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
 geo.setAttribute('aIndex',   new THREE.BufferAttribute(aIdxArr, 1));
 geo.setAttribute('aSeed',    new THREE.BufferAttribute(aSdArr,  1));
 
-const particleShaderMat = new THREE.ShaderMaterial({
+const VERT = `
+    precision highp float;
+    #define PI  3.14159265358979
+    #define TAU 6.28318530717959
+
+    uniform float uTime, uShape, uScale, uGravity, uJetPower, uChaos, uSpeed;
+    uniform int   uPalette;
+    uniform float uPSize, uPixel, uTotalCount, uHandInfl;
+    uniform vec3  uHandPos;
+
+    attribute float aIndex, aSeed;
+    varying vec3  vColor;
+    varying float vEnergy, vTwinkle;
+
+    // ── Fast divergence-free curl noise ──
+    vec3 curl(vec3 p, float t, float f) {
+        return vec3(
+            cos(p.y*f + t*.7)*sin(p.z*f*1.1) - sin(p.y*f*.9)*cos(p.z*f + t*.5),
+            cos(p.z*f + t*.6)*sin(p.x*f*1.2) - sin(p.z*f*.8)*cos(p.x*f + t*.6),
+            cos(p.x*f + t*.8)*sin(p.y*f)     - sin(p.x*f*1.1)*cos(p.y*f + t*.7)
+        );
+    }
+
+    // ── Topology 0: Singularity Accretion Disk + Jets ──
+    vec4 topo0(float nI, float t, float scl, float grv, float jp, float ch) {
+        float isJet = pow(abs(sin(nI * PI * 50.0)), 30.0);
+        float dW    = 1.0 - isJet;
+        float dR    = scl * (1.2 + 8.0 * pow(nI, 1.5));
+        float dTh   = nI * TAU * 137.508 + t * grv * scl / max(dR, 0.1);
+        float dN    = sin(dR * 0.5 - t * 3.0) * ch;
+        float dX    = dR * cos(dTh + dN);
+        float dZ    = dR * sin(dTh + dN);
+        float dY    = sin(dTh * 5.0 + t) * (dR * 0.05) * ch;
+        float jSign = mod(floor(nI * uTotalCount), 2.0) > 0.5 ? 1.0 : -1.0;
+        float jY    = jSign * (scl + nI * scl * 12.0 * jp);
+        float jR    = scl * 0.15 / (1.0 + nI * 10.0) * abs(sin(nI * 100.0 - t * 10.0));
+        float jT    = nI * 500.0 + t * 5.0;
+        return vec4(dX*dW + jR*cos(jT)*isJet, dY*dW + jY*isJet, dZ*dW + jR*sin(jT)*isJet, isJet);
+    }
+
+    // ── Topology 1: Quantum Lotus ──
+    vec3 topo1(float nI, float t, float scl, float ch) {
+        float phi  = acos(clamp(1.0 - 2.0*nI, -1.0, 1.0));
+        float theta = nI * TAU * 137.508;
+        float m   = 7.0;
+        float b1  = abs(cos(m * theta * 0.25));
+        float b2  = abs(sin(m * theta * 0.25));
+        float rs  = min(8.0, pow(max(1e-6, pow(b1,1.5) + pow(b2,1.5)), -1.0/1.2));
+        float fold = phi * (0.6 + 0.4 * cos(t * 0.6));
+        float rV  = scl * 0.9 * rs * sin(fold) + sin(nI * 31415.9) * ch * scl * 0.15;
+        float zV  = scl * 0.9 * rs * cos(fold) + cos(nI * 27182.8) * ch * scl * 0.15;
+        float fTh = theta + sin(rV * 0.05 - t) * 2.0;
+        return vec3(rV*cos(fTh), zV, rV*sin(fTh));
+    }
+
+    // ── Topology 2: 4D Breathing Tesseract ──
+    vec3 topo2(float nI, float t, float scl, float ch) {
+        float breath = 1.0 + 0.35 * sin(t*1.5 + nI*PI*4.0);
+        float gS = floor(nI * 16.0), sub = fract(nI * 16.0);
+        float ang = sub * TAU, bS = scl * 0.4 * breath;
+        float s1 = mod(gS,2.0)>=1.0?1.:-1., s2=mod(floor(gS/2.),2.)>=1.?1.:-1.;
+        float s4 = mod(floor(gS/4.),2.)>=1.?1.:-1., s8=mod(floor(gS/8.),2.)>=1.?1.:-1.;
+        float x4=s1*bS+bS*.4*cos(ang*3.+t), y4=s2*bS+bS*.4*sin(ang*2.+t*.7);
+        float z4=s4*bS+bS*.4*cos(ang*5.-t*.5), w4=s8*bS+bS*.5*sin(ang*4.+t*1.3)*ch;
+        float cx=cos(t*.8), sx=sin(t*.8), tmp=x4*cx-w4*sx; w4=x4*sx+w4*cx; x4=tmp;
+        float cy=cos(t*.5), sy=sin(t*.5);      tmp=y4*cy-w4*sy; w4=y4*sy+w4*cy; y4=tmp;
+        float f=(scl*2.0)/max(0.001, 2.5*scl+w4);
+        return vec3(x4*f, y4*f, z4*f);
+    }
+
+    // ── Topology 3: Clifford Strange Attractor ──
+    vec3 topo3(float nI, float t, float scl, float ch) {
+        float tC=nI*PI*64.+t*.2, pC=nI*TAU+t*.5;
+        float rC=scl*(.4+.6*sin(nI*100.+t));
+        float wA=sin(tC*.5+t)*ch, wB=cos(pC*3.-t*.7)*ch;
+        return vec3(rC*sin(tC)*cos(pC+wA)+cos(tC*7.)*(ch*4.),
+                    rC*sin(tC)*sin(pC+wB)+sin(pC*7.)*(ch*4.),
+                    rC*cos(tC)+sin(tC*11.+t*2.)*(ch*3.));
+    }
+
+    // ── Procedural HSL → RGB (accurate) ──
+    vec3 hsl2rgb(vec3 c) {
+        vec3 rgb = clamp(abs(mod(c.x*6.+vec3(0.,4.,2.),6.)-3.)-1.,0.,1.);
+        return c.z + c.y*(rgb-.5)*(1.-abs(2.*c.z-1.));
+    }
+
+    vec3 colorize(int pal, float nd, float nI, float t, float isJet, float dW) {
+        float h;
+        if      (pal==0) h=(0.52+nd*.35-t*.08)*dW + (0.08+nI*.12-t*.3)*isJet;
+        else if (pal==1) h=(0.96+nd*.18-t*.08)*dW + (0.12+nI*.18-t*.3)*isJet;
+        else if (pal==2) h=(0.80+nd*.30-t*.08)*dW + (0.48+nI*.20-t*.3)*isJet;
+        else if (pal==3) h=(0.33+nd*.38-t*.07)*dW + (0.68+nI*.25-t*.4)*isJet;
+        else             h=(0.05+nd*.80-t*.10)*dW + (0.60+nI*.20-t*.5)*isJet;
+        return hsl2rgb(vec3(fract(h+10.),
+                            0.92 + 0.08*sin(nI*1000.),
+                            clamp((1.-nd)*dW + isJet*.92, 0.18, 0.92)));
+    }
+
+    void main() {
+        float nI  = aIndex;
+        float t   = uTime * uSpeed * 0.85;
+        float sf  = clamp(uShape, 0.0, 3.0);
+        float sfF = floor(sf), sfFrac = sf - sfF;
+
+        vec3 p0 = vec3(0.0), p1 = vec3(0.0);
+        float isJet = 0.0, dW = 1.0;
+
+        if (sfF < 1.0) {
+            vec4 r = topo0(nI, t, uScale, uGravity, uJetPower, uChaos);
+            p0 = r.xyz; isJet = r.w; dW = 1.0 - isJet;
+            if (sfFrac > 0.0002) p1 = topo1(nI, t, uScale, uChaos);
+        } else if (sfF < 2.0) {
+            p0 = topo1(nI, t, uScale, uChaos);
+            if (sfFrac > 0.0002) p1 = topo2(nI, t, uScale, uChaos);
+        } else if (sfF < 3.0) {
+            p0 = topo2(nI, t, uScale, uChaos);
+            if (sfFrac > 0.0002) p1 = topo3(nI, t, uScale, uChaos);
+        } else {
+            p0 = topo3(nI, t, uScale, uChaos);
+        }
+
+        vec3 pos = mix(p0, p1, sfFrac);
+
+        // Curl turbulence overlay
+        pos += curl(pos, t, 0.018) * (uChaos * uScale * 0.04);
+
+        // Hand / mouse attractor pull
+        if (uHandInfl > 0.005) {
+            vec3 dv  = pos - uHandPos;
+            float dl = length(dv);
+            float f  = uHandInfl * uScale * 2.2 / (dl * dl + uScale + 0.001);
+            pos -= (dv / max(dl, 0.001)) * f * 0.35;
+        }
+
+        // Tilt + slow global spin
+        const float TILT = 0.47124;
+        float ct = cos(TILT), st = sin(TILT);
+        vec3 rp = vec3(pos.x, pos.y*ct - pos.z*st, pos.y*st + pos.z*ct);
+        float sp = t * 0.2, csp = cos(sp), ssp = sin(sp);
+        vec3 wp = vec3(rp.x*csp - rp.z*ssp, rp.y, rp.x*ssp + rp.z*csp);
+
+        // Colour + energy
+        float dist = length(wp);
+        float nd   = dist / (uScale * 8.0 + 0.001);
+        vColor  = colorize(uPalette, nd, nI, t, isJet, dW);
+        vEnergy = 0.8 + isJet * 2.2 + (1.0 - clamp(nd,0.,1.)) * 1.3;
+        vTwinkle= 0.78 + 0.22 * sin(uTime * (2.5 + aSeed * 4.5) + aSeed * 62.83);
+
+        vec4 mv = modelViewMatrix * vec4(wp, 1.0);
+        // Guard against div-by-zero and excessively large point sizes
+        gl_PointSize = clamp(vEnergy * uPSize * uPixel * (290.0 / max(-mv.z, 1.0)), 0.5, 32.0);
+        gl_Position  = projectionMatrix * mv;
+    }
+`;
+
+const FRAG = `
+    precision mediump float;
+    varying vec3  vColor;
+    varying float vEnergy, vTwinkle;
+
+    void main() {
+        vec2  coord = gl_PointCoord - 0.5;
+        float d     = length(coord);
+        if (d > 0.5) discard;
+
+        float core  = 1.0 - smoothstep(0.0, 0.14, d);
+        float inner = 1.0 - smoothstep(0.0, 0.28, d);
+        float halo  = 1.0 - smoothstep(0.0, 0.50, d);
+
+        // HDR colour: jet cores exceed 1.0 to trigger selective bloom
+        vec3 col = vColor * (core * (1.0 + vEnergy * 1.4) * 2.2 + inner * 1.1 + halo * 0.4);
+        col += vec3(-0.04, -0.01, 0.07) * core * 0.35;   // subtle chromatic core tint
+
+        float alpha = (core * 0.95 + inner * 0.55 + halo * 0.3) * vTwinkle;
+        gl_FragColor = vec4(col, alpha);
+    }
+`;
+
+const partMat = new THREE.ShaderMaterial({
     uniforms: {
         uTime:       { value: 0 },
         uTotalCount: { value: N },
-        uShape:      { value: 0.0 },
-        uScale:      { value: 25.0 },
+        uShape:      { value: 0 },
+        uScale:      { value: 25 },
         uGravity:    { value: 2.0 },
         uJetPower:   { value: 1.5 },
         uChaos:      { value: 0.8 },
@@ -517,581 +760,411 @@ const particleShaderMat = new THREE.ShaderMaterial({
         uPalette:    { value: 0 },
         uPSize:      { value: 1.0 },
         uPixel:      { value: Math.min(devicePixelRatio, 2) },
-        uHandPos:    { value: new THREE.Vector3(0, 0, 0) },
-        uHandInfl:   { value: 0.0 }
+        uHandPos:    { value: new THREE.Vector3() },
+        uHandInfl:   { value: 0 }
     },
-    vertexShader: `
-        uniform float uTime;
-        uniform float uTotalCount;
-        uniform float uShape;
-        uniform float uScale;
-        uniform float uGravity;
-        uniform float uJetPower;
-        uniform float uChaos;
-        uniform float uSpeed;
-        uniform int   uPalette;
-        uniform float uPSize;
-        uniform float uPixel;
-        uniform vec3  uHandPos;
-        uniform float uHandInfl;
-
-        attribute float aIndex;
-        attribute float aSeed;
-
-        varying vec3  vColor;
-        varying float vEnergy;
-        varying float vTwinkle;
-
-        vec3 fastCurl(vec3 p, float t, float f) {
-            float x = cos(p.y * f + t * 0.7) * sin(p.z * f * 1.1) - sin(p.y * f * 0.9) * cos(p.z * f + t * 0.5);
-            float y = cos(p.z * f + t * 0.6) * sin(p.x * f * 1.2) - sin(p.z * f * 0.8) * cos(p.x * f + t * 0.6);
-            float z = cos(p.x * f + t * 0.8) * sin(p.y * f)       - sin(p.x * f * 1.1) * cos(p.y * f + t * 0.7);
-            return vec3(x, y, z);
-        }
-
-        vec4 getTopo0(float nI, float t, float scl, float grv, float jp, float ch) {
-            float isJet = pow(abs(sin(nI * 3.14159265 * 50.0)), 30.0);
-            float dW = 1.0 - isJet;
-            float dR = scl * (1.2 + 8.0 * pow(nI, 1.5));
-            float dTh = nI * 3.14159265 * 2.0 * 137.508 + t * grv * (scl / (dR + 0.1));
-            float dN = sin(dR * 0.5 - t * 3.0) * ch;
-            float dX = dR * cos(dTh + dN);
-            float dZ = dR * sin(dTh + dN);
-            float dY = sin(dTh * 5.0 + t) * (dR * 0.05) * ch;
-
-            float jSign = mod(floor(nI * uTotalCount), 2.0) > 0.5 ? 1.0 : -1.0;
-            float jY = jSign * (scl + nI * scl * 12.0 * jp);
-            float jR = scl * 0.15 / (1.0 + nI * 10.0) * abs(sin(nI * 100.0 - t * 10.0));
-            float jT = nI * 500.0 + t * 5.0;
-
-            vec3 pos = vec3(dX * dW + jR * cos(jT) * isJet, dY * dW + jY * isJet, dZ * dW + jR * sin(jT) * isJet);
-            return vec4(pos, isJet);
-        }
-
-        vec3 getTopo1(float nI, float t, float scl, float ch) {
-            float phiL = acos(1.0 - 2.0 * nI);
-            float thetaL = nI * 3.14159265 * 2.0 * 137.508;
-            float m = 7.0;
-            float lc1 = abs(cos(m * thetaL * 0.25));
-            float lc2 = abs(sin(m * thetaL * 0.25));
-            float rsBase = max(1e-6, pow(lc1, 1.5) + pow(lc2, 1.5));
-            float rs = min(8.0, pow(rsBase, -1.0 / 1.2));
-            float bloom = 0.5 + 0.5 * sin(t * 0.6);
-            float fold = phiL * (1.0 - bloom * 0.6 + 0.2);
-            float rB = scl * 0.9 * rs * sin(fold);
-            float zB = scl * 0.9 * rs * cos(fold);
-            float ln = sin(nI * 31415.9) * ch;
-            float rV = rB + ln * scl * 0.15;
-            float zV = zB + cos(nI * 27182.8) * ch * scl * 0.15;
-            float sw = sin(rV * 0.05 - t) * 2.0;
-            float fTh = thetaL + sw;
-            return vec3(rV * cos(fTh), zV, rV * sin(fTh));
-        }
-
-        vec3 getTopo2(float nI, float t, float scl, float ch) {
-            float breath = 1.0 + 0.35 * sin(t * 1.5 + nI * 3.14159265 * 4.0);
-            float gS = floor(nI * 16.0);
-            float sub = fract(nI * 16.0);
-            float ang = sub * 3.14159265 * 2.0;
-            float bS = scl * 0.4 * breath;
-
-            float s1 = mod(gS, 2.0) >= 1.0 ? 1.0 : -1.0;
-            float s2 = mod(floor(gS / 2.0), 2.0) >= 1.0 ? 1.0 : -1.0;
-            float s4 = mod(floor(gS / 4.0), 2.0) >= 1.0 ? 1.0 : -1.0;
-            float s8 = mod(floor(gS / 8.0), 2.0) >= 1.0 ? 1.0 : -1.0;
-
-            float x4 = s1 * bS + bS * 0.4 * cos(ang * 3.0 + t);
-            float y4 = s2 * bS + bS * 0.4 * sin(ang * 2.0 + t * 0.7);
-            float z4 = s4 * bS + bS * 0.4 * cos(ang * 5.0 - t * 0.5);
-            float w4 = s8 * bS + bS * 0.5 * sin(ang * 4.0 + t * 1.3) * ch;
-
-            float cx = cos(t * 0.8), sx = sin(t * 0.8);
-            float tmp1 = x4 * cx - w4 * sx;
-            w4 = x4 * sx + w4 * cx;
-            x4 = tmp1;
-
-            float cy = cos(t * 0.5), sy = sin(t * 0.5);
-            float tmp2 = y4 * cy - w4 * sy;
-            w4 = y4 * sy + w4 * cy;
-            y4 = tmp2;
-
-            float sD = max(0.001, 2.5 * scl + w4);
-            float f = (scl * 2.0) / sD;
-            return vec3(x4 * f, y4 * f, z4 * f);
-        }
-
-        vec3 getTopo3(float nI, float t, float scl, float ch) {
-            float tC = nI * 3.14159265 * 64.0 + t * 0.2;
-            float pC = nI * 3.14159265 * 2.0 + t * 0.5;
-            float rC = scl * (0.4 + 0.6 * sin(nI * 100.0 + t));
-            float wA = sin(tC * 0.5 + t) * ch;
-            float wB = cos(pC * 3.0 - t * 0.7) * ch;
-            return vec3(
-                rC * sin(tC) * cos(pC + wA) + cos(tC * 7.0) * (ch * 4.0),
-                rC * sin(tC) * sin(pC + wB) + sin(pC * 7.0) * (ch * 4.0),
-                rC * cos(tC) + sin(tC * 11.0 + t * 2.0) * (ch * 3.0)
-            );
-        }
-
-        vec3 hsl2rgb(vec3 c) {
-            vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-            return c.z + c.y * (rgb - vec3(0.5)) * (1.0 - abs(2.0 * c.z - 1.0));
-        }
-
-        vec3 getParticleColor(int pal, float nd, float nI, float t, float isJet, float dW) {
-            float rawH = 0.0;
-            if (pal == 0)      rawH = (0.52 + nd * 0.35 - t * 0.08) * dW + (0.08 + nI * 0.12 - t * 0.3) * isJet;
-            else if (pal == 1) rawH = (0.96 + nd * 0.18 - t * 0.08) * dW + (0.12 + nI * 0.18 - t * 0.3) * isJet;
-            else if (pal == 2) rawH = (0.80 + nd * 0.30 - t * 0.08) * dW + (0.48 + nI * 0.20 - t * 0.3) * isJet;
-            else if (pal == 3) rawH = (0.33 + nd * 0.38 - t * 0.07) * dW + (0.68 + nI * 0.25 - t * 0.4) * isJet;
-            else               rawH = (0.05 + nd * 0.80 - t * 0.10) * dW + (0.60 + nI * 0.20 - t * 0.5) * isJet;
-            
-            float hue = fract(fract(rawH) + 1.0);
-            float sat = 0.92 + 0.08 * sin(nI * 1000.0);
-            float lit = clamp((1.0 - nd) * dW + isJet * 0.92, 0.18, 0.92);
-            return hsl2rgb(vec3(hue, sat, lit));
-        }
-
-        void main() {
-            float nI = aIndex;
-            float t = uTime * uSpeed * 0.85;
-            float sf = clamp(uShape, 0.0, 3.0);
-            float sfFloor = floor(sf);
-            float sfFrac = sf - sfFloor;
-
-            vec3 pos0 = vec3(0.0);
-            vec3 pos1 = vec3(0.0);
-            float isJet = 0.0;
-            float dW = 1.0;
-
-            if (sfFloor < 1.0) {
-                vec4 r0 = getTopo0(nI, t, uScale, uGravity, uJetPower, uChaos);
-                pos0 = r0.xyz;
-                isJet = r0.w;
-                dW = 1.0 - isJet;
-                if (sfFrac > 0.0001) pos1 = getTopo1(nI, t, uScale, uChaos);
-            } else if (sfFloor < 2.0) {
-                pos0 = getTopo1(nI, t, uScale, uChaos);
-                if (sfFrac > 0.0001) pos1 = getTopo2(nI, t, uScale, uChaos);
-            } else if (sfFloor < 3.0) {
-                pos0 = getTopo2(nI, t, uScale, uChaos);
-                if (sfFrac > 0.0001) pos1 = getTopo3(nI, t, uScale, uChaos);
-            } else {
-                pos0 = getTopo3(nI, t, uScale, uChaos);
-            }
-
-            vec3 finalPos = mix(pos0, pos1, sfFrac);
-
-            float curlStr = uChaos * uScale * 0.04;
-            vec3 curl = fastCurl(finalPos, t, 0.018);
-            finalPos += curl * curlStr;
-
-            if (uHandInfl > 0.01) {
-                vec3 dHand = finalPos - uHandPos;
-                float distH = length(dHand) + 0.1;
-                float force = uHandInfl * uScale * 2.5 / (distH * distH + uScale);
-                finalPos -= normalize(dHand) * force * 0.4;
-            }
-
-            float tilt = 0.47123889;
-            float ct = cos(tilt), st = sin(tilt);
-            vec3 rPos = vec3(finalPos.x, finalPos.y * ct - finalPos.z * st, finalPos.y * st + finalPos.z * ct);
-
-            float spinT = t * 0.2;
-            float cSp = cos(spinT), sSp = sin(spinT);
-            vec3 worldPos = vec3(rPos.x * cSp - rPos.z * sSp, rPos.y, rPos.x * sSp + rPos.z * cSp);
-
-            float dist = length(worldPos);
-            float nd = dist / (uScale * 8.0 + 0.001);
-            vColor = getParticleColor(uPalette, nd, nI, t, isJet, dW);
-            vEnergy = 0.8 + isJet * 2.2 + (1.0 - nd) * 1.3;
-            vTwinkle = 0.78 + 0.22 * sin(uTime * (2.5 + aSeed * 4.5) + aSeed * 62.83);
-
-            vec4 mvPos = modelViewMatrix * vec4(worldPos, 1.0);
-            gl_PointSize = vEnergy * uPSize * uPixel * (290.0 / -mvPos.z);
-            gl_Position = projectionMatrix * mvPos;
-        }
-    `,
-    fragmentShader: `
-        varying vec3  vColor;
-        varying float vEnergy;
-        varying float vTwinkle;
-
-        void main() {
-            vec2 coord = gl_PointCoord - vec2(0.5);
-            float d = length(coord);
-            if (d > 0.5) discard;
-
-            float core  = 1.0 - smoothstep(0.0, 0.15, d);
-            float inner = 1.0 - smoothstep(0.0, 0.30, d);
-            float halo  = 1.0 - smoothstep(0.0, 0.50, d);
-
-            float hdrBoost = 1.0 + vEnergy * 1.4;
-            vec3 finalColor = vColor * (core * hdrBoost * 2.2 + inner * 1.2 + halo * 0.5);
-            finalColor += vec3(-0.05, -0.02, 0.08) * core * 0.4;
-
-            float alpha = (core * 0.95 + inner * 0.6 + halo * 0.35) * vTwinkle;
-            gl_FragColor = vec4(finalColor, alpha);
-        }
-    `,
-    transparent: true,
-    depthWrite:  false,
-    blending:    THREE.AdditiveBlending
+    vertexShader: VERT, fragmentShader: FRAG,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
 });
+scene.add(new THREE.Points(geo, partMat));
 
-scene.add(new THREE.Points(geo, particleShaderMat));
-
-// Background Starfield
-const SN   = 4000;
-const sGeo = new THREE.BufferGeometry();
-const sPos = new Float32Array(SN * 3);
-const sCol = new Float32Array(SN * 3);
+// ── Background starfield ──
+const SN = 3500;
+const sgeo = new THREE.BufferGeometry();
+const spos = new Float32Array(SN*3), scol = new Float32Array(SN*3);
 for (let i = 0; i < SN; i++) {
-    const r = 420 + Math.random() * 700;
-    const th = Math.random() * Math.PI * 2, ph = Math.acos(2*Math.random()-1);
-    sPos[i*3]   = r*Math.sin(ph)*Math.cos(th);
-    sPos[i*3+1] = r*Math.sin(ph)*Math.sin(th);
-    sPos[i*3+2] = r*Math.cos(ph);
-    const b = 0.12 + Math.random() * 0.88;
-    const starType = Math.random();
-    if (starType < 0.3)      { sCol[i*3]=b*0.6; sCol[i*3+1]=b*0.7; sCol[i*3+2]=b; }
-    else if (starType < 0.55){ sCol[i*3]=b;     sCol[i*3+1]=b*0.85;sCol[i*3+2]=b*0.6;}
-    else                     { sCol[i*3]=b;     sCol[i*3+1]=b;     sCol[i*3+2]=b; }
+    const r = 420 + Math.random()*700;
+    const th = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1);
+    spos[i*3]=r*Math.sin(ph)*Math.cos(th); spos[i*3+1]=r*Math.sin(ph)*Math.sin(th); spos[i*3+2]=r*Math.cos(ph);
+    const b = 0.15 + Math.random()*0.85, st = Math.random();
+    if      (st < 0.3)  { scol[i*3]=b*.6; scol[i*3+1]=b*.7; scol[i*3+2]=b; }
+    else if (st < 0.55) { scol[i*3]=b;    scol[i*3+1]=b*.85;scol[i*3+2]=b*.6; }
+    else                { scol[i*3]=b;    scol[i*3+1]=b;    scol[i*3+2]=b; }
 }
-sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
-sGeo.setAttribute('color',    new THREE.BufferAttribute(sCol, 3));
-const sMat = new THREE.PointsMaterial({ size:0.9, vertexColors:true, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, depthWrite:false });
-const stars = new THREE.Points(sGeo, sMat);
+sgeo.setAttribute('position', new THREE.BufferAttribute(spos, 3));
+sgeo.setAttribute('color',    new THREE.BufferAttribute(scol, 3));
+const stars = new THREE.Points(sgeo,
+    new THREE.PointsMaterial({ size:0.85, vertexColors:true, transparent:true, opacity:0.45, blending:THREE.AdditiveBlending, depthWrite:false })
+);
 scene.add(stars);
 
-// ══════════════════════════════════════════════════════════
-// 4. UI CONTROLS & INTERACTION ENGINE
-// ══════════════════════════════════════════════════════════
-const uiV = {};
+// ═══════════════════════════════════════════
+// 4. SLIDER CONTROLS
+// ═══════════════════════════════════════════
+const uiV = {
+    shape:0, scale:25, gravity:2.0, jetPower:1.5, chaos:0.8, speed:0.85,
+    palette:0, psize:1.0, bloom:0.95
+};
+const DEFAULTS = { ...uiV };
 
 function mkSlider(cid, id, label, mn, mx, init) {
     uiV[id] = init;
     const cg  = document.getElementById(cid);
     const lbl = document.createElement('label');
-    lbl.innerHTML = `<span>${label}</span><span class="val" id="${id}-v">${init.toFixed(2)}</span>`;
+    lbl.innerHTML = `<span>${label}</span><span class="val" id="${id}-v">${fmt(init)}</span>`;
     const inp = document.createElement('input');
     inp.type='range'; inp.id=id; inp.min=mn; inp.max=mx;
-    inp.step=(mx-mn)/500; inp.value=init;
+    inp.step=(mx-mn)/400; inp.value=init;
     inp.addEventListener('input', () => {
         uiV[id] = +inp.value;
-        document.getElementById(id+'-v').textContent = uiV[id].toFixed(2);
-        if (id === 'shape') updateActivePresetBtn(+inp.value);
+        document.getElementById(id+'-v').textContent = fmt(uiV[id]);
+        if (id === 'shape') syncPresetBtns(uiV[id]);
     });
     cg.appendChild(lbl); cg.appendChild(inp);
 }
+
+function fmt(v) { return v < 10 ? v.toFixed(2) : v.toFixed(1); }
 
 function setSlider(id, val) {
     const el = document.getElementById(id); if (!el) return;
     const v = Math.min(+el.max, Math.max(+el.min, val));
     el.value = v; uiV[id] = v;
     const ve = document.getElementById(id+'-v');
-    if (ve) ve.textContent = v.toFixed(2);
-    if (id === 'shape') updateActivePresetBtn(v);
+    if (ve) ve.textContent = fmt(v);
+    if (id === 'shape') syncPresetBtns(v);
 }
 
-function updateActivePresetBtn(val) {
-    const roundVal = Math.round(val);
-    document.querySelectorAll('.btn-preset').forEach(btn => {
-        if (+btn.dataset.shape === roundVal) btn.classList.add('active');
-        else btn.classList.remove('active');
+function resetSliders() {
+    Object.entries(DEFAULTS).forEach(([k,v]) => {
+        if (k !== 'palette') setSlider(k, v);
     });
 }
 
-function initSliders() {
-    mkSlider('cg-shape',    'shape',    'Morph Topology',    0,   3,   0   );
-    mkSlider('cg-scale',    'scale',    'Event Horizon',    15,  60,  25   );
-    mkSlider('cg-gravity',  'gravity',  'Spacetime Warp',  0.5,   5, 2.0   );
-    mkSlider('cg-jetpower', 'jetPower', 'Jet Energy',        0,   3, 1.5   );
-    mkSlider('cg-chaos',    'chaos',    'Curl Chaos',        0,   2, 0.8   );
-    mkSlider('cg-speed',    'speed',    'Time Warp',       0.2, 2.0, 0.85  );
-    mkSlider('cg-psize',    'psize',    'Particle Scale',  0.4, 2.8, 1.0   );
-    mkSlider('cg-bloom',    'bloom',    'Bloom Intensity', 0.0, 2.5, 0.95  );
+function syncPresetBtns(val) {
+    const rv = Math.round(val);
+    document.querySelectorAll('.btn-preset').forEach(b => {
+        b.classList.toggle('active', +b.dataset.shape === rv);
+    });
 }
-initSliders();
 
+mkSlider('cg-shape',   'shape',    'Morph Topology',  0,   3,    0   );
+mkSlider('cg-scale',   'scale',    'Event Horizon',   15,  60,   25  );
+mkSlider('cg-gravity', 'gravity',  'Spacetime Warp',  0.5, 5,    2.0 );
+mkSlider('cg-jetpower','jetPower', 'Jet Energy',      0,   3,    1.5 );
+mkSlider('cg-chaos',   'chaos',    'Curl Chaos',      0,   2,    0.8 );
+mkSlider('cg-speed',   'speed',    'Time Warp',       0.2, 2.0,  0.85);
+mkSlider('cg-psize',   'psize',    'Particle Scale',  0.4, 2.8,  1.0 );
+mkSlider('cg-bloom',   'bloom',    'Bloom Intensity', 0.0, 2.5,  0.95);
+
+// Preset buttons
 document.querySelectorAll('.btn-preset').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const shapeVal = +btn.dataset.shape;
-        setSlider('shape', shapeVal);
-    });
+    btn.addEventListener('click', () => setSlider('shape', +btn.dataset.shape));
 });
 
+// Palette swatches
 document.querySelectorAll('.swatch').forEach(sw => {
     sw.addEventListener('click', () => {
         document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
         sw.classList.add('active');
-        uiV['palette'] = +sw.dataset.pal;
+        uiV.palette = +sw.dataset.pal;
     });
 });
 
-let _it='', _id='';
-function setInfo(t,d) {
-    if(_it!==t){document.getElementById('info-title').textContent=t;_it=t;}
-    if(_id!==d){document.getElementById('info-desc').textContent=d;_id=d;}
+// Info text (debounced via equality check)
+const SHAPE_INFO = [
+    ['Singularity Accretion',    '80,000 GPU Particles · Black Hole + Relativistic Jets · HDR Bloom'],
+    ['Quantum Lotus',             '80,000 GPU Particles · Spherical Harmonics · Phyllotaxis Spiral'],
+    ['4D Breathing Tesseract',    '80,000 GPU Particles · Hyperdimensional Lattice · 4D→3D Projection'],
+    ['Clifford Attractor',        '80,000 GPU Particles · Quantum Vortex · Non-Euclidean Fluid Flow']
+];
+let _infoCache = '';
+function setInfo(idx) {
+    const [title, desc] = SHAPE_INFO[idx];
+    const key = title + desc;
+    if (key === _infoCache) return;
+    _infoCache = key;
+    document.getElementById('info-title').textContent = title;
+    document.getElementById('info-desc').textContent  = desc;
 }
 
-// ══════════════════════════════════════════════════════════
-// 5. MOUSE & TOUCH ATTRACTOR FIELD
-// ══════════════════════════════════════════════════════════
-const raycaster = new THREE.Raycaster();
-const mouseVec  = new THREE.Vector2();
-const planePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-let mouseTargetPos = new THREE.Vector3();
-let isMouseActive = false;
-let mouseTimeout = null;
+// ═══════════════════════════════════════════
+// 5. MOUSE ATTRACTOR — ignores UI panels
+// ═══════════════════════════════════════════
+const raycaster    = new THREE.Raycaster();
+const mouseNDC     = new THREE.Vector2();
+const groundPlane  = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+const mouseWorldPos = new THREE.Vector3();
+let isMouseActive = false, mouseTimeout = null;
 
-window.addEventListener('pointermove', (e) => {
-    mouseVec.x = (e.clientX / innerWidth) * 2 - 1;
-    mouseVec.y = -(e.clientY / innerHeight) * 2 + 1;
-    
-    raycaster.setFromCamera(mouseVec, camera);
-    raycaster.ray.intersectPlane(planePlane, mouseTargetPos);
+renderer.domElement.addEventListener('pointermove', (e) => {
+    mouseNDC.x = (e.clientX / innerWidth)  *  2 - 1;
+    mouseNDC.y = (e.clientY / innerHeight) * -2 + 1;
+    raycaster.setFromCamera(mouseNDC, camera);
+    raycaster.ray.intersectPlane(groundPlane, mouseWorldPos);
     isMouseActive = true;
-    
     clearTimeout(mouseTimeout);
-    mouseTimeout = setTimeout(() => { isMouseActive = false; }, 2000);
+    mouseTimeout = setTimeout(() => { isMouseActive = false; }, 1800);
+});
+renderer.domElement.addEventListener('pointerleave', () => {
+    isMouseActive = false;
+    clearTimeout(mouseTimeout);
 });
 
-// ══════════════════════════════════════════════════════════
-// 6. ONE EURO FILTER FOR SMOOTH TRACKING
-// ══════════════════════════════════════════════════════════
-class LPF {
-    constructor(a){this.a=a;this.y=undefined;this.raw=undefined;}
-    hasLast(){return this.raw!==undefined;}
-    lastRaw(){return this.raw;}
-    fa(x,a){this.y=this.y===undefined?x:a*x+(1-a)*this.y;this.raw=x;return this.y;}
-}
+// ═══════════════════════════════════════════
+// 6. ONE-EURO FILTER — jitter-free tracking
+// ═══════════════════════════════════════════
 class OEF {
-    constructor(f,mc=1,b=0.007,dc=1){
-        this.f=f;this.mc=mc;this.b=b;this.dc=dc;
-        this.xf=new LPF(this._a(mc));this.df=new LPF(this._a(dc));this.lt=undefined;
+    constructor(freq, mCut=1, beta=0.007, dCut=1) {
+        this.f=freq; this.mc=mCut; this.b=beta; this.dc=dCut;
+        this.yp=NaN; this.dyp=0; this.lt=NaN;
     }
-    _a(c){const te=1/this.f,tau=1/(2*Math.PI*c);return 1/(1+tau/te);}
-    filter(x,t){
-        if(this.lt!==undefined&&t!==undefined)this.f=1/(t-this.lt);
-        this.lt=t;
-        const dx=this.xf.hasLast()?(x-this.xf.lastRaw())*this.f:0;
-        const edx=this.df.fa(dx,this._a(this.dc));
-        return this.xf.fa(x,this._a(this.mc+this.b*Math.abs(edx)));
+    _a(cut) { const r=2*Math.PI*cut/this.f; return r/(r+1); }
+    filter(x, t) {
+        if (!isNaN(this.lt) && t > this.lt) this.f = 1/(t - this.lt);
+        this.lt = t;
+        const dx   = isNaN(this.yp) ? 0 : (x - this.yp) * this.f;
+        const adx  = this._a(this.dc);
+        const edx  = isNaN(this.dyp) ? dx : adx*dx + (1-adx)*this.dyp;
+        this.dyp   = edx;
+        const cut  = this.mc + this.b * Math.abs(edx);
+        const a    = this._a(cut);
+        this.yp    = isNaN(this.yp) ? x : a*x + (1-a)*this.yp;
+        return this.yp;
     }
 }
-const oefX = new OEF(30,1.0,0.05), oefY = new OEF(30,1.0,0.05);
+const oefX = new OEF(30, 1.0, 0.05), oefY = new OEF(30, 1.0, 0.05);
 
-const CONFIRM=4, GRACE=6;
-let pendG=null,pendN=0,confG=null,graceN=0;
-const gbarEl=document.getElementById('gbar');
-function updateGesture(raw){
-    if(raw&&raw!=='None'){
-        raw===pendG?pendN++:(pendG=raw,pendN=1);graceN=0;
-        if(pendN>=CONFIRM)confG=pendG;
-    }else{if(++graceN>GRACE){confG=null;pendG=null;pendN=0;}}
-    gbarEl.style.width=(confG?Math.min(100,pendN/CONFIRM*100):0)+'%';
+// ═══════════════════════════════════════════
+// 7. GESTURE TEMPORAL DEBOUNCE
+// ═══════════════════════════════════════════
+const CONFIRM = 4, GRACE = 6;
+let pendG=null, pendN=0, confG=null, graceN=0;
+const gbarEl = document.getElementById('gbar');
+
+function updateGesture(raw) {
+    if (raw && raw !== 'None') {
+        if (raw === pendG) pendN++; else { pendG = raw; pendN = 1; }
+        graceN = 0;
+        if (pendN >= CONFIRM) confG = pendG;
+    } else {
+        if (++graceN > GRACE) { confG = pendG = null; pendN = 0; }
+    }
+    gbarEl.style.width = (confG ? Math.min(100, pendN/CONFIRM*100) : 0) + '%';
     return confG;
 }
 
-const FP=[[8,6],[12,10],[16,14],[20,18]];
-const extN=lm=>FP.reduce((n,[t,p])=>n+(lm[t].y<lm[p].y?1:0),0);
-const isPalm  =lm=>extN(lm)>=4;
-const isPeace =lm=>lm[8].y<lm[6].y&&lm[12].y<lm[10].y&&lm[16].y>lm[14].y&&lm[20].y>lm[18].y;
-const isPoint =lm=>lm[8].y<lm[6].y&&lm[12].y>lm[10].y&&lm[16].y>lm[14].y&&lm[20].y>lm[18].y;
+// Landmark-based gesture classification (robust against MediaPipe edge cases)
+const FP = [[8,6],[12,10],[16,14],[20,18]];
+const extN    = lm => FP.reduce((n,[t,p]) => n + (lm[t].y < lm[p].y ? 1 : 0), 0);
+const isPalm  = lm => extN(lm) >= 4;
+const isPeace = lm => lm[8].y<lm[6].y && lm[12].y<lm[10].y && lm[16].y>lm[14].y && lm[20].y>lm[18].y;
+const isPoint = lm => lm[8].y<lm[6].y && lm[12].y>lm[10].y && lm[16].y>lm[14].y && lm[20].y>lm[18].y;
 
-// ══════════════════════════════════════════════════════════
-// 7. MEDIAPIPE NEURAL LINK
-// ══════════════════════════════════════════════════════════
-let recognizer=null,drawUtil=null,lastVT=-1,lastHX=-1,lastHY=-1;
-let handWorldPos = new THREE.Vector3();
-let handInfluenceTarget = 0.0, currentHandInfluence = 0.0;
+// ═══════════════════════════════════════════
+// 8. MEDIAPIPE NEURAL LINK
+// ═══════════════════════════════════════════
+let recognizer=null, drawUtil=null, lastVT=-1, lastHX=-1, lastHY=-1;
+const handWorldPos  = new THREE.Vector3();
+let handInfl = 0.0;        // smooth current influence (used in render loop)
+let wantAutoRotate = true; // canonical source of truth for orbit.autoRotate
 
-const vidEl=document.getElementById('webcam');
-const ocEl=document.getElementById('oc');
-const octx=ocEl.getContext('2d');
-const statusEl=document.getElementById('nstatus');
-const gnameEl=document.getElementById('gname');
-const ringEl=document.getElementById('gesture-ring');
-let prevConfG=null;
+const vidEl    = document.getElementById('webcam');
+const ocEl     = document.getElementById('oc');
+const octx     = ocEl.getContext('2d');
+const statusEl = document.getElementById('nstatus');
+const gnameEl  = document.getElementById('gname');
+const ringEl   = document.getElementById('gesture-ring');
+let prevConfG  = null;
 
-function pulseRing(){ringEl.classList.remove('active');void ringEl.offsetWidth;ringEl.classList.add('active');}
+function pulseRing() {
+    ringEl.classList.remove('active');
+    void ringEl.offsetWidth; // force reflow to restart animation
+    ringEl.classList.add('active');
+}
 
-async function initNeural(){
-    try{
-        statusEl.textContent='Loading AI model…';statusEl.style.color='#f59e0b';
-        const vis=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm');
-        recognizer=await GestureRecognizer.createFromOptions(vis,{
-            baseOptions:{
-                modelAssetPath:'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',
-                delegate:'GPU'
+async function initNeural() {
+    try {
+        statusEl.textContent = 'Loading AI model…'; statusEl.style.color = '#f59e0b';
+        const vis = await FilesetResolver.forVisionTasks(
+            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm'
+        );
+        recognizer = await GestureRecognizer.createFromOptions(vis, {
+            baseOptions: {
+                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',
+                delegate: 'GPU'
             },
-            runningMode:'VIDEO',numHands:1,
-            minHandDetectionConfidence:0.6,minHandPresenceConfidence:0.5,minTrackingConfidence:0.5
+            runningMode: 'VIDEO', numHands: 1,
+            minHandDetectionConfidence: 0.6,
+            minHandPresenceConfidence:  0.5,
+            minTrackingConfidence:      0.5
         });
-        drawUtil=new DrawingUtils(octx);
-        statusEl.textContent='Camera access…';statusEl.style.color='#eab308';
-        const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:320},height:{ideal:240}}});
-        vidEl.srcObject=stream;
-        vidEl.addEventListener('loadeddata',()=>{
-            statusEl.textContent='● Neural Link Active';statusEl.style.color='#00ffcc';
+        drawUtil = new DrawingUtils(octx);
+        statusEl.textContent = 'Requesting camera…'; statusEl.style.color = '#eab308';
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }
+        });
+        vidEl.srcObject = stream;
+        vidEl.addEventListener('loadeddata', () => {
+            statusEl.textContent = '● Neural Link Active'; statusEl.style.color = '#00ffcc';
             camLoop();
-        });
-    }catch(e){
-        console.warn('Webcam unavailable:', e);
-        statusEl.textContent='Interactive Mode (Mouse)';statusEl.style.color='#38bdf8';
+        }, { once: true });
+    } catch(e) {
+        console.warn('[NeuralLink]', e.message || e);
+        statusEl.textContent = 'Mouse mode active'; statusEl.style.color = '#38bdf8';
     }
 }
 
-function applyGesture(g,rx,ry,ts){
-    const fx=oefX.filter(rx,ts/1000),fy=oefY.filter(ry,ts/1000);
-    const dX=lastHX>=0?fx-lastHX:0,dY=lastHY>=0?fy-lastHY:0;
-    const sdX=Math.abs(dX)<0.12?dX:0,sdY=Math.abs(dY)<0.12?dY:0;
-    const scl=uiV['scale']??25;
+function applyGesture(g, rx, ry, ts) {
+    const fx = oefX.filter(rx, ts*0.001), fy = oefY.filter(ry, ts*0.001);
+    const dX = lastHX >= 0 ? fx - lastHX : 0;
+    const dY = lastHY >= 0 ? fy - lastHY : 0;
+    const sdX = Math.abs(dX) < 0.12 ? dX : 0;
+    const sdY = Math.abs(dY) < 0.12 ? dY : 0;
+    const scl = uiV.scale;
 
-    if(g==='Pointing_Up'){
-        orbit.autoRotate=false;
-        scene.rotation.y+=sdX*3.8;scene.rotation.x+=sdY*2.8;
-        scene.rotation.x=Math.max(-Math.PI/2.6,Math.min(Math.PI/2.6,scene.rotation.x));
-        
-        handWorldPos.set((fx-0.5)*scl*5.0, (0.5-fy)*scl*3.5, 0);
-        handInfluenceTarget = 1.0;
-    }else if(g==='Open_Palm'){
-        const tZ=28+fx*265;camera.position.z+=(tZ-camera.position.z)*0.07;
-        handInfluenceTarget *= 0.9;
-    }else if(g==='Victory'){
-        const cur=uiV['chaos']??0.8;
-        setSlider('chaos',Math.max(0,Math.min(2,cur+sdX*6.0)));
-        handInfluenceTarget *= 0.9;
+    if (g === 'Pointing_Up') {
+        wantAutoRotate = false;
+        scene.rotation.y += sdX * 3.8;
+        scene.rotation.x  = Math.max(-Math.PI/2.6, Math.min(Math.PI/2.6, scene.rotation.x + sdY*2.8));
+        handWorldPos.set((fx - 0.5)*scl*5.0, (0.5 - fy)*scl*3.5, 0);
+        handInfl = Math.min(handInfl + 0.12, 1.0);
+    } else {
+        handInfl *= 0.9;
+        if (g === 'Open_Palm') {
+            camera.position.z += (28 + fx*265 - camera.position.z) * 0.07;
+            wantAutoRotate = true;
+        } else if (g === 'Victory') {
+            setSlider('chaos', Math.max(0, Math.min(2, uiV.chaos + sdX*6.0)));
+            wantAutoRotate = true;
+        }
     }
-    lastHX=fx;lastHY=fy;
+    lastHX = fx; lastHY = fy;
 }
 
 let lastCamTime = 0;
-function camLoop(){
+function camLoop() {
     requestAnimationFrame(camLoop);
     const now = performance.now();
-    if (now - lastCamTime < 33) return;
+    if (now - lastCamTime < 33) return;   // 30fps vision throttle
     lastCamTime = now;
+    if (!recognizer || vidEl.readyState < 2) return;
+    if (vidEl.currentTime === lastVT) return;
+    lastVT = vidEl.currentTime;
 
-    if(!recognizer) return;
-    if(vidEl.currentTime!==lastVT){
-        lastVT=vidEl.currentTime;
-        const ts=performance.now();
-        const res=recognizer.recognizeForVideo(vidEl,ts);
-        octx.save();octx.clearRect(0,0,ocEl.width,ocEl.height);
-        if(res.landmarks?.length>0){
-            const lm=res.landmarks[0];
-            drawUtil.drawConnectors(lm,GestureRecognizer.HAND_CONNECTIONS,{color:'#00ffcc66',lineWidth:1.5});
-            drawUtil.drawLandmarks(lm,{color:'#fff',fillColor:'#00ffcc44',lineWidth:1,radius:2});
-            let lG=null;
-            if(isPoint(lm))lG='Pointing_Up';
-            else if(isPeace(lm))lG='Victory';
-            else if(isPalm(lm))lG='Open_Palm';
-            let mlG=null,mlC=0;
-            if(res.gestures[0]?.[0]){mlG=res.gestures[0][0].categoryName;mlC=res.gestures[0][0].score;}
-            const raw=lG||(mlC>0.82?mlG:null);
-            const conf=updateGesture(raw);
-            const hx=1.0-lm[0].x,hy=lm[0].y;
-            if(conf){
-                gnameEl.textContent=conf.replace(/_/g,' ').toUpperCase();
-                statusEl.textContent='● '+conf.replace(/_/g,' ');statusEl.style.color='#00ffcc';
-                applyGesture(conf,hx,hy,ts);
-                if(conf!==prevConfG)pulseRing();
-            }else{
-                gnameEl.textContent=pendG?`…${pendG.replace(/_/g,' ')} (${pendN}/${CONFIRM})`:'';
-                statusEl.textContent='● Hand tracking';statusEl.style.color='#00ddaa';
-            }
-            orbit.autoRotate=conf!=='Pointing_Up';
-            prevConfG=conf;
-        }else{
-            updateGesture(null);gnameEl.textContent='';
-            statusEl.textContent='Awaiting hand…';statusEl.style.color='#f59e0b';
-            lastHX=-1;lastHY=-1;handInfluenceTarget*=0.9;
-            orbit.autoRotate=true;prevConfG=null;
+    const ts  = performance.now();
+    const res = recognizer.recognizeForVideo(vidEl, ts);
+    octx.save(); octx.clearRect(0, 0, ocEl.width, ocEl.height);
+
+    if (res.landmarks?.length > 0) {
+        const lm = res.landmarks[0];
+        drawUtil.drawConnectors(lm, GestureRecognizer.HAND_CONNECTIONS, { color:'#00ffcc55', lineWidth:1.5 });
+        drawUtil.drawLandmarks(lm, { color:'#fff', fillColor:'#00ffcc33', lineWidth:1, radius:2 });
+
+        let lG = null;
+        if      (isPoint(lm)) lG = 'Pointing_Up';
+        else if (isPeace(lm)) lG = 'Victory';
+        else if (isPalm(lm))  lG = 'Open_Palm';
+
+        const ml = res.gestures[0]?.[0];
+        const raw = lG ?? (ml && ml.score > 0.82 ? ml.categoryName : null);
+        const conf = updateGesture(raw);
+        const hx = 1.0 - lm[0].x, hy = lm[0].y;
+
+        if (conf) {
+            const label = conf.replace(/_/g,' ');
+            gnameEl.textContent = label.toUpperCase();
+            statusEl.textContent = '● ' + label; statusEl.style.color = '#00ffcc';
+            applyGesture(conf, hx, hy, ts);
+            if (conf !== prevConfG) pulseRing();
+        } else {
+            gnameEl.textContent = pendG ? `…${pendG.replace(/_/g,' ')} (${pendN}/${CONFIRM})` : '';
+            statusEl.textContent = '● Tracking'; statusEl.style.color = '#00ddaa';
+            wantAutoRotate = true;
+            handInfl *= 0.9;
         }
-        octx.restore();
+        prevConfG = conf;
+    } else {
+        updateGesture(null);
+        gnameEl.textContent = '';
+        statusEl.textContent = 'Awaiting hand…'; statusEl.style.color = '#f59e0b';
+        lastHX = lastHY = -1;
+        handInfl = Math.max(0, handInfl - 0.05);
+        wantAutoRotate = true;
+        prevConfG = null;
     }
+    octx.restore();
 }
 initNeural();
 
-const SHAPE_INFO=[
-    ['Singularity Accretion',    '80,000 GPU Particles · Black Hole + Relativistic Jets · Selective Bloom'],
-    ['Quantum Lotus',             '80,000 GPU Particles · Spherical Harmonics · Phyllotaxis Spiral'],
-    ['4D Breathing Tesseract',    '80,000 GPU Particles · Hyperdimensional Lattice · Dynamic Projection'],
-    ['Clifford Strange Attractor','80,000 GPU Particles · Quantum Vortex · Non-Euclidean Fluid Flow']
-];
+// ═══════════════════════════════════════════
+// 9. KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════
+let paused = false;
+window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return; // don't intercept slider focus
+    switch(e.key.toLowerCase()) {
+        case 'h':        isGuideOpen ? closeGuide() : openGuide(); break;
+        case 'r':        resetSliders(); break;
+        case ' ':        paused = !paused; e.preventDefault(); break;
+        case 'escape':   closeGuide(); break;
+    }
+});
 
-// FPS Counter
+// ═══════════════════════════════════════════
+// 10. ANIMATION LOOP
+// ═══════════════════════════════════════════
+const clock   = new THREE.Clock();
+const fpsEl   = document.getElementById('hud-fps');
 let fcnt=0, lastFt=performance.now();
-const fpsEl=document.getElementById('hud-fps');
-const clock = new THREE.Clock();
 
-// ══════════════════════════════════════════════════════════
-// 8. BUTTER-SMOOTH ANIMATION LOOP
-// ══════════════════════════════════════════════════════════
-function animate(){
+function animate() {
     requestAnimationFrame(animate);
+    if (paused) return;
+
     const time = clock.getElapsedTime();
 
-    fcnt++; const now = performance.now();
-    if(now - lastFt >= 500){
-        fpsEl.textContent = `FPS: ${Math.round(fcnt*1000/(now-lastFt))}`;
-        fcnt=0; lastFt=now;
+    // FPS counter with colour feedback
+    fcnt++;
+    const now = performance.now();
+    if (now - lastFt >= 600) {
+        const fps = Math.round(fcnt * 1000 / (now - lastFt));
+        fpsEl.textContent = `FPS: ${fps}`;
+        fpsEl.style.color = fps >= 55 ? '#10b981' : fps >= 35 ? '#f59e0b' : '#f87171';
+        fcnt = 0; lastFt = now;
     }
 
-    const shapeF = uiV['shape'] ?? 0;
-    const scl    = uiV['scale'] ?? 25;
-    const grv    = uiV['gravity'] ?? 2.0;
-    const jp     = uiV['jetPower'] ?? 1.5;
-    const ch     = uiV['chaos'] ?? 0.8;
-    const spd    = uiV['speed'] ?? 0.85;
-    const pal    = uiV['palette'] ?? 0;
-    const psz    = uiV['psize'] ?? 1.0;
-    const blm    = uiV['bloom'] ?? 0.95;
+    // Sync orbit.autoRotate from canonical state once per frame
+    orbit.autoRotate = wantAutoRotate;
 
-    const uniforms = particleShaderMat.uniforms;
-    uniforms.uTime.value    = time;
-    uniforms.uShape.value   = shapeF;
-    uniforms.uScale.value   = scl;
-    uniforms.uGravity.value = grv;
-    uniforms.uJetPower.value= jp;
-    uniforms.uChaos.value   = ch;
-    uniforms.uSpeed.value   = spd;
-    uniforms.uPalette.value = pal;
-    uniforms.uPSize.value   = psz;
+    // Hand / mouse attractor blend — decay per frame so influence always falls off
+    const wantHandInfl = (handInfl > 0.01 || isMouseActive) ? 1.0 : 0.0;
+    const currentInfl  = partMat.uniforms.uHandInfl.value;
+    const blendedInfl  = handInfl > 0.01
+        ? handInfl
+        : isMouseActive ? Math.min(currentInfl + 0.08, 0.8) : Math.max(currentInfl - 0.06, 0);
+    partMat.uniforms.uHandInfl.value = blendedInfl;
+    partMat.uniforms.uHandPos.value.copy(handInfl > 0.01 ? handWorldPos : mouseWorldPos);
 
-    if (handInfluenceTarget > 0.05) {
-        currentHandInfluence += (handInfluenceTarget - currentHandInfluence) * 0.1;
-        uniforms.uHandPos.value.copy(handWorldPos);
-        uniforms.uHandInfl.value = currentHandInfluence;
-    } else if (isMouseActive) {
-        currentHandInfluence += (0.8 - currentHandInfluence) * 0.1;
-        uniforms.uHandPos.value.copy(mouseTargetPos);
-        uniforms.uHandInfl.value = currentHandInfluence;
-    } else {
-        currentHandInfluence *= 0.92;
-        uniforms.uHandInfl.value = currentHandInfluence;
-    }
+    // Update all uniforms from UI values
+    const u = partMat.uniforms;
+    u.uTime.value     = time;
+    u.uShape.value    = uiV.shape;
+    u.uScale.value    = uiV.scale;
+    u.uGravity.value  = uiV.gravity;
+    u.uJetPower.value = uiV.jetPower;
+    u.uChaos.value    = uiV.chaos;
+    u.uSpeed.value    = uiV.speed;
+    u.uPalette.value  = uiV.palette;
+    u.uPSize.value    = uiV.psize;
 
     cinPass.uniforms.uTime.value = time;
-    bloomPass.strength = blm;
+    bloomPass.strength = uiV.bloom;
 
-    const currentPresetIdx = Math.min(3, Math.max(0, Math.round(shapeF)));
-    setInfo(SHAPE_INFO[currentPresetIdx][0], SHAPE_INFO[currentPresetIdx][1]);
+    setInfo(Math.min(3, Math.max(0, Math.round(uiV.shape))));
 
-    stars.rotation.y = time * 0.01;
+    stars.rotation.y = time * 0.009;
     orbit.update();
     composer.render();
 }
 
 window.addEventListener('resize', () => {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-    composer.setSize(innerWidth, innerHeight);
-    hdrTarget.setSize(innerWidth, innerHeight);
-    particleShaderMat.uniforms.uPixel.value = Math.min(devicePixelRatio, 2);
+    const w = innerWidth, h = innerHeight;
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+    composer.setSize(w, h);
+    hdrTarget.setSize(w, h);
+    bloomPass.resolution.set(Math.floor(w*0.5), Math.floor(h*0.5));
+    partMat.uniforms.uPixel.value = Math.min(devicePixelRatio, 2);
 });
 
 animate();
