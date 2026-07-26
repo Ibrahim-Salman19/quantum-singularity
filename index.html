@@ -974,10 +974,11 @@ function handlePointerOrTouch(clientX, clientY) {
     mouseNDC.x = (clientX / innerWidth)  *  2 - 1;
     mouseNDC.y = (clientY / innerHeight) * -2 + 1;
     raycaster.setFromCamera(mouseNDC, camera);
-    raycaster.ray.intersectPlane(groundPlane, mouseWorldPos);
-    isMouseActive = true;
-    clearTimeout(mouseTimeout);
-    mouseTimeout = setTimeout(() => { isMouseActive = false; }, 1800);
+    if (raycaster.ray.intersectPlane(groundPlane, mouseWorldPos)) {
+        isMouseActive = true;
+        clearTimeout(mouseTimeout);
+        mouseTimeout = setTimeout(() => { isMouseActive = false; }, 1800);
+    }
 }
 
 renderer.domElement.addEventListener('pointermove', (e) => {
@@ -1070,6 +1071,8 @@ const isPoint = lm => isFingerExtended(lm, 8, 6) && !isFingerExtended(lm, 12, 10
 // ═══════════════════════════════════════════
 let recognizer=null, drawUtil=null, lastVT=-1, lastHX=-1, lastHY=-1;
 const handWorldPos  = new THREE.Vector3();
+const tempDir       = new THREE.Vector3();
+const handNDC       = new THREE.Vector2();
 let handInfl = 0.0;
 let wantAutoRotate = true;
 let targetCameraRadius = 140;
@@ -1134,11 +1137,11 @@ function applyGesture(g, lm, ts, hSize) {
         // Pinpoint 3D Raycasting: map index fingertip (lm[8]) from camera screen space to 3D world space
         const tipX = (1.0 - lm[8].x) * 2.0 - 1.0;
         const tipY = (1.0 - lm[8].y) * 2.0 - 1.0;
-        const handNDC = new THREE.Vector2(tipX, tipY);
+        handNDC.set(tipX, tipY);
         raycaster.setFromCamera(handNDC, camera);
-        raycaster.ray.intersectPlane(groundPlane, handWorldPos);
-
-        handInfl = Math.min(handInfl + 0.16, 1.0);
+        if (raycaster.ray.intersectPlane(groundPlane, handWorldPos)) {
+            handInfl = Math.min(handInfl + 0.16, 1.0);
+        }
     } else {
         handInfl *= 0.88;
         if (g === 'Open_Palm') {
@@ -1152,7 +1155,7 @@ function applyGesture(g, lm, ts, hSize) {
             wantAutoRotate = true;
             isZoomingActive = false;
             // Use index-middle tip movement for smooth chaos control
-            const rx = 1.0 - lm[8].x, ry = lm[8].y;
+            const rx = 1.0 - lm[8].x;
             const fx = oefX.filter(rx, ts*0.001);
             const dX = lastHX >= 0 ? fx - lastHX : 0;
             const sdX = Math.abs(dX) < 0.12 ? dX : 0;
@@ -1164,7 +1167,7 @@ function applyGesture(g, lm, ts, hSize) {
     }
 }
 
-let lastCamTime = 0;
+let lastCamTime = 0, lastMediaPipeTime = 0;
 function camLoop() {
     requestAnimationFrame(camLoop);
     const now = performance.now();
@@ -1174,49 +1177,55 @@ function camLoop() {
     if (vidEl.currentTime === lastVT) return;
     lastVT = vidEl.currentTime;
 
-    const ts  = performance.now();
+    let ts = performance.now();
+    if (ts <= lastMediaPipeTime) ts = lastMediaPipeTime + 1;
+    lastMediaPipeTime = ts;
+
     const res = recognizer.recognizeForVideo(vidEl, ts);
     octx.save(); octx.clearRect(0, 0, ocEl.width, ocEl.height);
 
-    if (res.landmarks?.length > 0) {
-        const lm = res.landmarks[0];
-        drawUtil.drawConnectors(lm, GestureRecognizer.HAND_CONNECTIONS, { color:'#00ffcc55', lineWidth:1.5 });
-        drawUtil.drawLandmarks(lm, { color:'#fff', fillColor:'#00ffcc33', lineWidth:1, radius:2 });
+    try {
+        if (res.landmarks?.length > 0) {
+            const lm = res.landmarks[0];
+            drawUtil.drawConnectors(lm, GestureRecognizer.HAND_CONNECTIONS, { color:'#00ffcc55', lineWidth:1.5 });
+            drawUtil.drawLandmarks(lm, { color:'#fff', fillColor:'#00ffcc33', lineWidth:1, radius:2 });
 
-        let lG = null;
-        if      (isPoint(lm)) lG = 'Pointing_Up';
-        else if (isPeace(lm)) lG = 'Victory';
-        else if (isPalm(lm))  lG = 'Open_Palm';
+            let lG = null;
+            if      (isPoint(lm)) lG = 'Pointing_Up';
+            else if (isPeace(lm)) lG = 'Victory';
+            else if (isPalm(lm))  lG = 'Open_Palm';
 
-        const ml = res.gestures[0]?.[0];
-        const mlGesture = (ml && ml.score > 0.70) ? ml.categoryName : null;
-        const raw = mlGesture ?? lG;
-        const conf = updateGesture(raw);
-        const hSize = Math.hypot(lm[12].x - lm[0].x, lm[12].y - lm[0].y);
+            const ml = res.gestures[0]?.[0];
+            const mlGesture = (ml && ml.score > 0.70) ? ml.categoryName : null;
+            const raw = mlGesture ?? lG;
+            const conf = updateGesture(raw);
+            const hSize = Math.hypot(lm[12].x - lm[0].x, lm[12].y - lm[0].y);
 
-        if (conf) {
-            const label = conf.replace(/_/g,' ');
-            gnameEl.textContent = label.toUpperCase();
-            statusEl.textContent = '● ' + label; statusEl.style.color = '#00ffcc';
-            applyGesture(conf, lm, ts, hSize);
-            if (conf !== prevConfG) pulseRing();
+            if (conf) {
+                const label = conf.replace(/_/g,' ');
+                gnameEl.textContent = label.toUpperCase();
+                statusEl.textContent = '● ' + label; statusEl.style.color = '#00ffcc';
+                applyGesture(conf, lm, ts, hSize);
+                if (conf !== prevConfG) pulseRing();
+            } else {
+                gnameEl.textContent = pendG ? `…${pendG.replace(/_/g,' ')} (${pendN}/${CONFIRM})` : '';
+                statusEl.textContent = '● Tracking'; statusEl.style.color = '#00ddaa';
+                wantAutoRotate = true;
+                handInfl *= 0.9;
+            }
+            prevConfG = conf;
         } else {
-            gnameEl.textContent = pendG ? `…${pendG.replace(/_/g,' ')} (${pendN}/${CONFIRM})` : '';
-            statusEl.textContent = '● Tracking'; statusEl.style.color = '#00ddaa';
+            updateGesture(null);
+            gnameEl.textContent = '';
+            statusEl.textContent = 'Awaiting hand…'; statusEl.style.color = '#f59e0b';
+            lastHX = lastHY = -1;
+            handInfl = Math.max(0, handInfl - 0.05);
             wantAutoRotate = true;
-            handInfl *= 0.9;
+            prevConfG = null;
         }
-        prevConfG = conf;
-    } else {
-        updateGesture(null);
-        gnameEl.textContent = '';
-        statusEl.textContent = 'Awaiting hand…'; statusEl.style.color = '#f59e0b';
-        lastHX = lastHY = -1;
-        handInfl = Math.max(0, handInfl - 0.05);
-        wantAutoRotate = true;
-        prevConfG = null;
+    } finally {
+        octx.restore();
     }
-    octx.restore();
 }
 initNeural();
 
@@ -1287,15 +1296,23 @@ function animate() {
     if (isZoomingActive || Math.abs(camera.position.distanceTo(orbit.target) - targetCameraRadius) > 0.5) {
         const currentRadius = camera.position.distanceTo(orbit.target);
         const lerpedRadius  = THREE.MathUtils.lerp(currentRadius, targetCameraRadius, 0.1);
-        const dir = camera.position.clone().sub(orbit.target).normalize();
-        if (dir.lengthSq() > 0.0001) {
-            camera.position.copy(orbit.target).addScaledVector(dir, lerpedRadius);
+        tempDir.subVectors(camera.position, orbit.target).normalize();
+        if (tempDir.lengthSq() > 0.0001) {
+            camera.position.copy(orbit.target).addScaledVector(tempDir, lerpedRadius);
         }
     }
 
     orbit.update();
     composer.render();
 }
+
+renderer.domElement.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    paused = true;
+}, false);
+renderer.domElement.addEventListener('webglcontextrestored', () => {
+    paused = false;
+}, false);
 
 window.addEventListener('resize', () => {
     const w = innerWidth, h = innerHeight;
