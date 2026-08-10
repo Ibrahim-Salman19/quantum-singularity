@@ -1,154 +1,124 @@
-# 🌌 Quantum Singularity — Ultra GPU Edition
+# Quantum Singularity
 
-[![WebGL](https://img.shields.io/badge/WebGL-2.0-00ffcc?style=for-the-badge&logo=webgl)](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API)
-[![Three.js](https://img.shields.io/badge/Three.js-r160-black?style=for-the-badge&logo=three.js)](https://threejs.org/)
-[![MediaPipe](https://img.shields.io/badge/MediaPipe-Neural_Link_v3-FF6F00?style=for-the-badge&logo=google)](https://developers.google.com/mediapipe)
-[![Performance](https://img.shields.io/badge/FPS-60%2B_Butter_Smooth-10B981?style=for-the-badge)](https://animation-zeta-rosy.vercel.app)
+**A real-time WebGL 2 particle simulation you control with your hands and your voice — running entirely on-device, from a single static HTML file.**
 
-An award-winning, interactive 3D WebGL particle simulation driven by **GPU Vertex Shader computation** and **AI Hand Gesture Recognition (MediaPipe Neural Link)**. 
+[**▶ Live demo**](https://animation-zeta-rosy.vercel.app/) · [Architecture](./ARCHITECTURE.md) · [Changelog](./CHANGELOG.md) · [Validation report](./VALIDATION.md) · [MIT License](./LICENSE)
 
-Computes **80,000+ particles** in real-time at a silky smooth **60+ FPS** directly on the GPU with zero CPU memory bottlenecks.
+![Quantum Singularity](./og-image.jpg)
 
 ---
 
-## 🚀 Live Demos
+## What it is
 
-- 🌐 **Live Web Application:** [https://animation-zeta-rosy.vercel.app](https://animation-zeta-rosy.vercel.app)
-- 💻 **Local Development:** `http://localhost:8080`
+Up to 110,000 GPU particles arranged into four mathematical topologies, rendered through an HDR bloom pipeline, driven by **three fused real-time input channels**:
 
----
-
-## 🎮 How to Interact & Control
-
-You can interact with the Quantum Singularity using **Hand Gestures via Webcam**, **Mouse/Touch movement**, or the **Glassmorphism Control Panel**.
-
-### 1. 🖐️ Hand Gestures (Webcam Neural Link)
-When webcam access is enabled, MediaPipe tracks your hand landmarks in 3D space:
-
-| Gesture | Action | Description |
+| Input | Technology | What it does |
 | :--- | :--- | :--- |
-| ☝️ **Pointing Finger** | **Interactive Attractor Field** | Pulls and bends 80,000 particles around your index finger in 3D space while rotating the galaxy. |
-| ✋ **Open Palm** | **Camera Distance Zoom** | Move your palm left/right to smoothly zoom camera position in and out. |
-| ✌️ **Peace / Victory Sign** | **Morph Chaos Generator** | Distorts spacetime by introducing high-frequency divergence-free curl turbulence. |
+| **Pointer** | Raycast onto a world-space ground plane | Drag an attractor through the field |
+| **Hand gestures** | MediaPipe Tasks Vision, on-device | Point to attract, open palm to control camera distance, Victory to add turbulence |
+| **Live sound** | Web Audio API FFT, on-device | Bass swells the field, treble sharpens turbulence, detected beats fire a visual pulse |
 
-> *Note: If webcam is unavailable or blocked, **Mouse Cursor Tracking** automatically takes over! Move your mouse over the screen to attract particles.*
+Camera and microphone are both strictly opt-in, requested only on an explicit click, and neither stream ever leaves the browser.
 
----
-
-### 2. 🎛️ Control Panel & Presets
-
-Located on the top-left glassmorphic panel:
-- **Topology Presets (1-Click Switchers):**
-  - **Singularity Accretion:** Relativistic black hole disk with dual polar particle jets.
-  - **Quantum Lotus:** Spherical harmonics & phyllotaxis spiral geometry.
-  - **4D Breathing Tesseract:** 4-dimensional hypercube breathing and rotating through 3D projection.
-  - **Clifford Attractor:** Non-Euclidean quantum fluid vortex.
-- **Color Theme Swatches:** Instant switching between 5 vibrant curated palettes (*Deep Space Teal*, *Solar Supernova*, *Cyberpunk Magenta*, *Aurora*, *Full Spectrum*).
-- **Simulation Sliders:** Adjust Event Horizon scale, Spacetime Gravity warp, Jet Power, Curl Chaos, Time Speed, Particle Size, and Bloom Intensity in real-time.
+**Press `B` in the live demo** for an in-app summary of the engineering decisions, or `P` for a live GPU-time and draw-call readout.
 
 ---
 
-## 🧠 How It Works Under The Hood (Architecture & Math)
+## Why it's interesting (engineering notes)
 
-```
-                       ┌─────────────────────────────────────────┐
-                       │           Webcam Stream                 │
-                       └───────────────────┬─────────────────────┘
-                                           │
-                                           ▼
-                       ┌─────────────────────────────────────────┐
-                       │     MediaPipe AI Vision (30 FPS)        │
-                       │     - Landmark Detection                │
-                       │     - One-Euro Tracking Filter          │
-                       └───────────────────┬─────────────────────┘
-                                           │
-                                  Uniforms │ (30 Floats)
-                                           ▼
-┌──────────────────┐               ┌─────────────────────────────┐               ┌──────────────────────────────┐
-│ Static Attributes│-------------->│    GPU Vertex Shader        │-------------->│  HDR Post-Processing Pass    │
-│ - Particle Index │  (0 CPU Upload│    - 80k Math & Topologies   │               │  - Unreal Selective Bloom    │
-│ - Random Seeds   │   per frame)  │    - Fast 3D Curl Turbulence │               │  - Chromatic Aberration      │
-└──────────────────┘               │    - Procedural HSL Color    │               │  - Vignette & Film Grain     │
-                                   └─────────────────────────────┘               └──────────────┬───────────────┘
-                                                                                                │
-                                                                                                ▼
-                                                                                 ┌──────────────────────────────┐
-                                                                                 │      Screen Output (60+ FPS) │
-                                                                                 └──────────────────────────────┘
-```
+This is a computational-art piece, but the work that went into it is mostly systems work. A few decisions worth calling out:
 
-### ⚡ 1. Why It Runs at 60+ FPS (GPU Vertex Shader Simulation)
-Standard JavaScript particle systems calculate particle positions on the CPU inside a `requestAnimationFrame` loop, streaming megabytes of buffer data (`needsUpdate = true`) to the GPU every frame. This causes severe CPU frame drops and lag.
+### Positions are never computed on the CPU
 
-**Our Approach:**
-- Particle positions, physics equations, curl turbulence, and color calculations are computed **100% inside the GPU GLSL Vertex Shader**.
-- Position buffers are initialized **ONCE** on startup and never updated on CPU.
-- The CPU loop overhead is **0ms**, allowing high particle counts (80,000+) to render effortlessly at 60–144 FPS.
+There is no `position` buffer. Every particle's location is derived procedurally inside the vertex shader each frame from its index and a topology function (accretion disk, phyllotaxis lotus, 4D tesseract projection, strange attractor). Dropping the conventional `N × 3` attribute removed 1.3 MB of zeroes that were being uploaded to the GPU and bound on every draw.
 
----
+Because each topology maps particle index monotonically to radius, an ordered buffer meant that lowering the draw range under load visibly lopped the outer edge off the disk. The index attribute is shuffled once at startup with a seeded Fisher–Yates, which decorrelates buffer order from spatial position — so quality reductions now thin the field uniformly and are essentially invisible.
 
-### 🌀 2. Divergence-Free 3D Curl Noise
-To prevent particles from clumping into static lines, we use a fast 3D vector curl noise field in GLSL:
+### Time-based state, not frame-based
 
-$$\vec{v}_{curl} = \nabla \times \vec{\Psi}$$
+A `lerp(current, target, k)` applied once per frame converges twice as fast on a 120 Hz display as on a 60 Hz one, and crawls whenever a loop is throttled. Every easing, debounce, and smoothing path in the app — gesture hysteresis, camera distance, audio band smoothing, onset decay — runs through a frame-rate-independent exponential approach instead, so behaviour is identical at 30 Hz and 144 Hz. The gesture state machine's thresholds are expressed in **seconds**, not frame counts.
 
-Because the curl of any vector field is mathematically divergence-free ($\nabla \cdot (\nabla \times \vec{\Psi}) = 0$), particles move like incompressible quantum fluid, swirling fluidly without overlapping.
+### Gesture recognition fuses two independent signals
+
+The neural classifier (MediaPipe's trained `gesture_recognizer.task`) is fast and accurate on canonical poses but only knows a fixed label set. A hand-written geometric classifier — finger joint angles, PIP/DIP straightness, palm-basis normal quality, fingertip separation — is orientation-invariant and degrades gracefully. The two are blended with a **quality-weighted** rule where geometry's weight scales with how reliably the palm normal can be estimated, plus agreement boosts and a `None` veto from either source.
+
+The result runs through a temporal state machine with separate activation / switch / hold / release thresholds, so a gesture can't flicker on a single-frame spike and can't be blocked from releasing by a flickering challenger.
+
+### Audio reactivity is a peer, not a bolt-on
+
+The microphone path mirrors the camera path exactly: explicit permission gate, session-counter guard against stale enable/disable races, named error messaging for every `getUserMedia` failure mode, and full teardown on tab hide, page unload, and bfcache persistence. FFT bins are mapped to bass/treble Hz ranges once at connection time rather than every frame, and an adaptive onset detector uses a slow running average of bass energy as its noise floor — so beat detection works on a quiet podcast and a loud track alike, without a sensitivity slider.
+
+### The render loop allocates nothing
+
+Gesture ranking, temporal state updates, audio band analysis, and NDC mapping all write into pre-allocated scratch objects rather than returning new ones. DOM writes are change-gated. The result is zero per-frame garbage, so there are no collector pauses to show up as frame-time spikes.
+
+### Quality adapts to the actual device, then to the actual frame time
+
+Particle count, pixel ratio cap, and ML inference rate are tiered at boot from `deviceMemory`, `hardwareConcurrency`, and `saveData`, then adjusted live from measured frame time against a calibrated refresh rate — with a dead zone and cooldown so it settles instead of oscillating. Render targets are reallocated once per quality step, not twice.
+
+### Correctness details that only show up under scrutiny
+
+- **Phyllotaxis**: the golden angle is `2.39996…` radians. The shader was scaling `137.508°` by TAU, which is not the same constant and produced a subtly wrong spiral.
+- **Grain**: additive noise applied to a linear HDR value becomes ±0.15 near black after the sRGB encode in `OutputPass`. Grain is applied in gamma-encoded space so it stays perceptually uniform instead of turning into blocky shadow noise.
+- **Chromatic aberration & vignette**: both operate in aspect-corrected space, so "distance from centre" is a real radial distance rather than a UV-space ellipse stretched on wide displays.
+- **Point size**: derived from `projectionMatrix[1][1]` and the drawing-buffer height, so perspective scaling is physically correct and tracks FOV and window size.
+- **Draw-call profiling**: `EffectComposer` issues one `renderer.render()` per pass and `WebGLRenderer.info` auto-resets on each, so naively reading `info.render.calls` reports the last pass only. The render loop takes ownership of the reset to get an honest per-frame total.
 
 ---
 
-### 👁️ 3. MediaPipe AI & One-Euro Smoothing Filter
-1. **MediaPipe Tasks Vision:** Extracts 21 3D hand landmarks from webcam frames.
-2. **One-Euro Filter:** Applies an adaptive low-pass filter to hand position vectors $(x, y)$, removing jitter while keeping zero latency during fast gestures.
-3. **Throttled Vision Loop:** Runs AI detection at 30 FPS to save hardware resources while WebGL renders at 60+ FPS.
+## Testing
 
----
-
-### 🎨 4. HDR Bloom & ACES Filmic Tone Mapping
-- Uses Three.js `UnrealBloomPass` with selective HDR thresholding (`0.88`).
-- Standard particles output normal luminance (~1.0), remaining crisp.
-- Relativistic jet core particles output boosted energy values (> 3.0), triggering bright cinematic glowing halos.
-- Rendered through ACES Filmic Tone Mapping for film-grade highlight compression and rich shadows.
-
----
-
-## 🛠️ Running Locally
-
-### Requirements
-- Any modern web browser with WebGL 2.0 support (Chrome, Edge, Firefox, Safari, Brave).
-- Python 3 or Node.js installed.
-
-### Quick Start
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/devhms/handgesture_animation.git
-   cd handgesture_animation
-   ```
-
-2. **Start a local HTTP server:**
-   - **Using Python 3:**
-     ```bash
-     python3 -m http.server 8080
-     ```
-   - **Using Node `serve` / `http-server`:**
-     ```bash
-     npx serve -l 8080
-     ```
-
-3. **Open in browser:**
-   Navigate to `http://localhost:8080` in your web browser.
-
----
-
-## 📁 Project Structure
-
-```
-handgesture_animation/
-├── index.html        # Complete single-file WebGL app (HTML, CSS Glassmorphism, GPU Shaders, Three.js, MediaPipe AI)
-└── README.md         # Detailed architectural guide & documentation
+```bash
+npm install
+npx playwright install chromium
+npm test        # static audit + full Playwright suite
 ```
 
+| Suite | Covers |
+| :--- | :--- |
+| `gesture-recognition.spec.ts` | Geometry scoring per pose, score separation, scale invariance, palm-normal quality, malformed input, temporal activation/spike/release, challenger-flicker regression, frame-rate independence, fusion agreement and `None` veto, prototype-pollution resistance, NDC isotropy and mirroring |
+| `audio-reactivity.spec.ts` | Band-bin mapping and clamping, band level extraction, adaptive onset firing and cooldown, idle UI state, full enable/disable round trip |
+| `engineering-panel.spec.ts` | Modal focus management, `inert` background isolation, mutual exclusion, live stat binding, GPU/draw-call readout and the multi-pass counting regression |
+| `camera-pipeline.spec.ts` | Real camera-on flow headlessly with a fake device: model download and validation, WASM init, toggle round trip |
+| `accessibility.spec.ts` | Keyboard shortcuts, ARIA state, guide overlay |
+| `dom.spec.ts` · `gesture-state.spec.ts` · `webgl.spec.ts` | Interface structure, preset/palette state, WebGL 2 context, FPS HUD, focus mode |
+
+The pure maths in both the gesture and audio pipelines is exposed through `window.__qsGesture` and `window.__qsAudio` test surfaces. That's deliberate: those are the only subsystems that can't be driven through the UI without a physical hand in front of a physical camera or real sound in the room. Pushing the side effects to the edges makes the interesting logic verifiable with synthetic landmark poses and synthetic frequency bins.
+
+`scripts/static_audit.js` additionally checks ES module syntax, duplicate DOM IDs, `vercel.json` schema and headers, and `robots.txt`.
+
 ---
 
-## 📜 License
+## Accessibility & resilience
 
-MIT License — Feel free to use, modify, and build upon this project!
+- Full keyboard control (`H` guide, `B` engineering notes, `P` stats, `F` focus mode, `R` reset, `1–4` topologies, `Space` pause, `Esc` dismiss) with modifier keys never hijacked.
+- Modals use a real focus trap with `inert` background isolation and focus restoration.
+- Honours `prefers-reduced-motion` and `prefers-reduced-transparency`.
+- Graceful degradation for: no WebGL 2, WebGL context loss and restore, no `EXT_color_buffer_float` (falls back from HDR to 8-bit targets), no GPU timer extension, CDN failure, offline, denied or missing camera/microphone, and `localStorage` being unavailable.
+
+---
+
+## Deployment
+
+Static-only by design — no Vercel Functions, Middleware, Edge Functions, Blob storage, Image Optimization, or server-side AI. WebGL and MediaPipe inference run in the visitor's browser.
+
+Deploy `index.html`, `vercel.json`, `robots.txt`, `sitemap.xml`, `manifest.json`, `og-image.jpg`, and the icon files from the repository root with Vercel's **Other** / static preset. No build command.
+
+Why this shape:
+
+- The app shell is a single HTML file; the favicon is a data URI, avoiding a separate request.
+- Three.js and MediaPipe runtime files are loaded by the browser directly from pinned upstream CDNs rather than proxied, so they never consume Vercel bandwidth. Do **not** rewrite them through a Function — that converts browser-to-CDN traffic into Vercel Fast Data Transfer for no benefit.
+- Every CDN-loaded module is pinned with a Subresource Integrity hash in the import map (`sha384`, cross-verified against jsdelivr's published file hashes before use), so a compromised or MITM'd response for an already-allowed origin fails closed instead of executing.
+- The MediaPipe model is cached in browser `CacheStorage` after first load, with magic-byte validation and poison eviction.
+- Camera permission is requested *before* the ML model downloads, so visitors who decline never pay the download cost.
+- `vercel.json` restricts camera and microphone to the same origin and applies a CSP permitting only the exact external origins in use.
+- `robots.txt` keeps search crawlers allowed while declining common model-training crawlers, and points to `sitemap.xml`.
+- `manifest.json` + a maskable icon set make it installable as a standalone app on mobile and desktop.
+
+Vercel Hobby is intended for personal/non-commercial projects; a portfolio demo fits that intent, and commercial use should move to the appropriate plan.
+
+---
+
+## Stack
+
+Three.js `0.185.1` (pinned) · WebGL 2 · custom GLSL · MediaPipe Tasks Vision `0.10.35` (pinned) · Web Audio API · Playwright · zero runtime dependencies, zero build step.
