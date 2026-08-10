@@ -1,0 +1,12 @@
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+.vercel/
+.DS_Store
+*.log
+
+# Stray Chrome/lighthouse user-data-dir profiles: chrome-launcher can resolve a
+# Windows-style tmp path literally as a directory name in this environment.
+lighthouse-report.report.*
+C:*/

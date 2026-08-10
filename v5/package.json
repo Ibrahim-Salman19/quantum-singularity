@@ -1,0 +1,41 @@
+{
+  "name": "quantum-singularity",
+  "version": "5.2.0",
+  "type": "module",
+  "private": true,
+  "description": "Interactive WebGL 2 particle simulation with on-device hand gesture and live microphone control",
+  "license": "MIT",
+  "author": "Ibrahim Salman",
+  "homepage": "https://animation-zeta-rosy.vercel.app/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devhms/handgesture_animation.git",
+    "directory": "v5"
+  },
+  "bugs": {
+    "url": "https://github.com/devhms/handgesture_animation/issues"
+  },
+  "keywords": [
+    "webgl",
+    "webgl2",
+    "three.js",
+    "gpu-particles",
+    "mediapipe",
+    "hand-gesture-recognition",
+    "web-audio-api",
+    "creative-coding",
+    "shader",
+    "glsl"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node scripts/static_audit.js && npx playwright test",
+    "test:static": "node scripts/static_audit.js",
+    "test:e2e": "npx playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

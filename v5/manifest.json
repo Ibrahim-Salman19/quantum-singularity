@@ -1,0 +1,19 @@
+{
+  "name": "Quantum Singularity — WebGL Particle Field",
+  "short_name": "Quantum Singularity",
+  "description": "Interactive WebGL 2 particle simulation with on-device hand gesture and live microphone control.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080a0a",
+  "theme_color": "#080a0a",
+  "lang": "en",
+  "categories": ["art", "graphics", "entertainment"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
