@@ -81,6 +81,7 @@ npm test        # static audit + full Playwright suite
 | `engineering-panel.spec.ts` | Modal focus management, `inert` background isolation, mutual exclusion, live stat binding, GPU/draw-call readout and the multi-pass counting regression |
 | `camera-pipeline.spec.ts` | Real camera-on flow headlessly with a fake device: model download and validation, WASM init, toggle round trip |
 | `accessibility.spec.ts` | Keyboard shortcuts, ARIA state, guide overlay |
+| `shader-compile.spec.ts` | GLSL3 post-processing pass compiles with no WebGL program errors — guards the `ShaderPass`/`glslVersion` regression |
 | `dom.spec.ts` · `gesture-state.spec.ts` · `webgl.spec.ts` | Interface structure, preset/palette state, WebGL 2 context, FPS HUD, focus mode |
 
 The pure maths in both the gesture and audio pipelines is exposed through `window.__qsGesture` and `window.__qsAudio` test surfaces. That's deliberate: those are the only subsystems that can't be driven through the UI without a physical hand in front of a physical camera or real sound in the room. Pushing the side effects to the edges makes the interesting logic verifiable with synthetic landmark poses and synthetic frequency bins.

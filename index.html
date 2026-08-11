@@ -1717,19 +1717,23 @@ const CinematicShader = {
         uAspect:  { value: new THREE.Vector2(1, 1) }
     },
     vertexShader: `
-        varying vec2 vUv;
+        out vec2 vUv;
         void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
     `,
     fragmentShader: `
         #ifdef GL_FRAGMENT_PRECISION_HIGH
         precision highp float;
+        precision highp int;
         #else
         precision mediump float;
+        precision mediump int;
         #endif
+        // GLSL ES 3.0 output variable (gl_FragColor is removed in GLSL3).
+        out vec4 fragColor;
         uniform sampler2D tDiffuse;
         uniform float uTime, uCA, uVig, uGrain;
         uniform vec2 uAspect;
-        varying vec2 vUv;
+        in vec2 vUv;
         void main() {
             // Work in an aspect-corrected space so "distance from centre" is a real
             // radial distance rather than a UV-space ellipse.
@@ -1743,12 +1747,12 @@ const CinematicShader = {
             if (uCA > 0.0002) {
                 vec2 dir = d > 0.001 ? (c / d) * (uCA * d * d * 4.0) / uAspect : vec2(0.0);
                 col = vec3(
-                    texture2D(tDiffuse, vUv + dir).r,
-                    texture2D(tDiffuse, vUv).g,
-                    texture2D(tDiffuse, vUv - dir).b
+                    texture(tDiffuse, vUv + dir).r,
+                    texture(tDiffuse, vUv).g,
+                    texture(tDiffuse, vUv - dir).b
                 );
             } else {
-                col = texture2D(tDiffuse, vUv).rgb;
+                col = texture(tDiffuse, vUv).rgb;
             }
 
             // Vignette. Previously smoothstep(0.28, 0.82, d * 0.52) which, given d
@@ -1761,17 +1765,38 @@ const CinematicShader = {
             // than the linear HDR value. Adding a linear +/-0.018 offset near black
             // becomes +/-0.15 after the sRGB encode in OutputPass -- coarse, blocky
             // shadow noise. Encoding first keeps the grain perceptually uniform.
-            float seed = dot(gl_FragCoord.xy, vec2(12.9898, 78.233)) + uTime * 0.71;
-            float noise = fract(sin(seed) * 43758.5453) - 0.5;
+            // PCG-style integer hash: avoids the sin()*43758 transcendental which
+            // hits every pixel every frame at full resolution. floatBitsToUint is
+            // pure bitwise arithmetic -- same perceptual quality, lower ALU cost.
+            uvec2 q = uvec2(gl_FragCoord.xy) ^ uvec2(floatBitsToUint(uTime * 0.71));
+            q.x ^= q.y * 1664525u + 1013904223u;
+            q.x ^= q.x >> 16u;
+            q.x *= 0x45d9f3bu;
+            q.x ^= q.x >> 16u;
+            float noise = (float(q.x & 0xffffffu) / float(0xffffffu)) - 0.5;
             vec3 enc = pow(max(col, vec3(0.0)), vec3(1.0 / 2.2));
             enc += noise * uGrain;
             col = pow(max(enc, vec3(0.0)), vec3(2.2));
 
-            gl_FragColor = vec4(col, 1.0);
+            fragColor = vec4(col, 1.0);
         }
     `
 };
-const cinPass = new ShaderPass(CinematicShader);
+// ShaderPass's own ShaderMaterial constructor does NOT forward `glslVersion`
+// (it only copies name/defines/uniforms/vertex/fragment), so setting it on a
+// plain shader object would silently compile as GLSL ES 1.00 and fail on the
+// GLSL3 syntax below. ShaderPass *does* accept a ShaderMaterial instance
+// directly, so build the material here with GLSL3 explicitly set.
+// GLSL ES 3.0 enables uvec2 / floatBitsToUint for the integer grain hash and
+// removes the deprecated texture2D / gl_FragColor built-ins. Safe: the project
+// already enforces WebGL2 above, so GLSL3 is always available in this context.
+const cinPass = new ShaderPass(new THREE.ShaderMaterial({
+    name: 'CinematicShader',
+    uniforms: THREE.UniformsUtils.clone(CinematicShader.uniforms),
+    vertexShader: CinematicShader.vertexShader,
+    fragmentShader: CinematicShader.fragmentShader,
+    glslVersion: THREE.GLSL3
+}));
 composer.addPass(cinPass);
 // Keeps the cinematic pass's radial maths aspect-correct.
 function updateCinematicAspect(w, h) {
@@ -1996,10 +2021,11 @@ const FRAG = `
     void main() {
         vec2  coord = gl_PointCoord - 0.5;
         float d     = length(coord);
-        // No discard: beyond d = 0.5 all three falloffs are already zero, so the
-        // additive blend contributes nothing anyway. discard would only disable
-        // early-Z and framebuffer compression on the tile-based mobile GPUs this
-        // path targets.
+        // No discard, no conditional branch: beyond d = 0.5 all three falloffs are
+        // already zero, so the additive blend contributes nothing and the write is
+        // a no-op. discard (or an explicit early-out if) would disable Early-Z and
+        // framebuffer compression on tile-based mobile GPUs -- the only thing worse
+        // than a zero write is preventing the hardware from skipping it.
         float core  = 1.0 - smoothstep(0.0, 0.14, d);
         float inner = 1.0 - smoothstep(0.0, 0.28, d);
         float halo  = 1.0 - smoothstep(0.0, 0.50, d);
