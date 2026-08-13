@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 20
+
+jobs:
+  static-audit:
+    name: Static audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run test:static
+
+  test-logic:
+    name: Tests - gesture/audio/accessibility logic
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: static-audit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            pw-${{ runner.os }}-
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run fast logic suites
+        run: npm run test:fast
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-logic-results
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  test-gpu:
+    name: Tests - WebGL/camera/audio pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    needs: static-audit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            pw-${{ runner.os }}-
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run GPU-heavy suites
+        run: npm run test:gpu
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-gpu-results
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore

@@ -9,8 +9,7 @@
   "homepage": "https://animation-zeta-rosy.vercel.app/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/devhms/handgesture_animation.git",
-    "directory": "v5"
+    "url": "git+https://github.com/devhms/handgesture_animation.git"
   },
   "bugs": {
     "url": "https://github.com/devhms/handgesture_animation/issues"
@@ -33,7 +32,10 @@
   "scripts": {
     "test": "node scripts/static_audit.js && npx playwright test",
     "test:static": "node scripts/static_audit.js",
-    "test:e2e": "npx playwright test"
+    "test:e2e": "npx playwright test",
+    "test:fast": "npx playwright test tests/gesture-recognition.spec.ts tests/gesture-state.spec.ts tests/dom.spec.ts tests/accessibility.spec.ts",
+    "test:gpu": "npx playwright test tests/engineering-panel.spec.ts tests/webgl.spec.ts tests/shader-compile.spec.ts tests/camera-pipeline.spec.ts tests/audio-reactivity.spec.ts",
+    "test:ci": "node scripts/static_audit.js && npx playwright test tests/gesture-recognition.spec.ts tests/gesture-state.spec.ts tests/dom.spec.ts tests/accessibility.spec.ts tests/engineering-panel.spec.ts tests/webgl.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1"
