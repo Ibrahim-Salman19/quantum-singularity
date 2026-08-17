@@ -46,7 +46,7 @@ The result runs through a temporal state machine with separate activation / swit
 
 ### Audio reactivity is a peer, not a bolt-on
 
-The microphone path mirrors the camera path exactly: explicit permission gate, session-counter guard against stale enable/disable races, named error messaging for every `getUserMedia` failure mode, and full teardown on tab hide, page unload, and bfcache persistence. FFT bins are mapped to bass/treble Hz ranges once at connection time rather than every frame, and an adaptive onset detector uses a slow running average of bass energy as its noise floor — so beat detection works on a quiet podcast and a loud track alike, without a sensitivity slider.
+The microphone path mirrors the camera path exactly: explicit permission gate, session-counter guard against stale enable/disable races, named error messaging for every `getUserMedia` failure mode, and full teardown on tab hide, page unload, and bfcache persistence — on tab hide the camera/microphone are fully stopped, and re-acquired on return only if the visitor had them on. FFT bins are mapped to bass/treble Hz ranges once at connection time rather than every frame, and an adaptive onset detector uses a slow running average of bass energy as its noise floor — so beat detection works on a quiet podcast and a loud track alike, without a sensitivity slider.
 
 ### The render loop allocates nothing
 
@@ -78,10 +78,13 @@ npm test        # static audit + full Playwright suite
 | :--- | :--- |
 | `gesture-recognition.spec.ts` | Geometry scoring per pose, score separation, scale invariance, palm-normal quality, malformed input, temporal activation/spike/release, challenger-flicker regression, frame-rate independence, fusion agreement and `None` veto, prototype-pollution resistance, NDC isotropy and mirroring |
 | `audio-reactivity.spec.ts` | Band-bin mapping and clamping, band level extraction, adaptive onset firing and cooldown, idle UI state, full enable/disable round trip |
+| `audio-bands-4.spec.ts` | Four-band DSP: bin boundaries, sub-bass blend, treble-only response, state keys |
 | `engineering-panel.spec.ts` | Modal focus management, `inert` background isolation, mutual exclusion, live stat binding, GPU/draw-call readout and the multi-pass counting regression |
 | `camera-pipeline.spec.ts` | Real camera-on flow headlessly with a fake device: model download and validation, WASM init, toggle round trip |
 | `accessibility.spec.ts` | Keyboard shortcuts, ARIA state, guide overlay |
 | `shader-compile.spec.ts` | GLSL3 post-processing pass compiles with no WebGL program errors — guards the `ShaderPass`/`glslVersion` regression |
+| `topologies.spec.ts` | Hopf/Lorenz topology expansion, keyboard 5/6 + preset buttons, all-6 mapping |
+| `url-state.spec.ts` | Hash serialization, invalid-hash tolerance, clipboard copy, HUD revert |
 | `dom.spec.ts` · `gesture-state.spec.ts` · `webgl.spec.ts` | Interface structure, preset/palette state, WebGL 2 context, FPS HUD, focus mode |
 
 The pure maths in both the gesture and audio pipelines is exposed through `window.__qsGesture` and `window.__qsAudio` test surfaces. That's deliberate: those are the only subsystems that can't be driven through the UI without a physical hand in front of a physical camera or real sound in the room. Pushing the side effects to the edges makes the interesting logic verifiable with synthetic landmark poses and synthetic frequency bins.
@@ -109,7 +112,7 @@ Why this shape:
 
 - The app shell is a single HTML file; the favicon is a data URI, avoiding a separate request.
 - Three.js and MediaPipe runtime files are loaded by the browser directly from pinned upstream CDNs rather than proxied, so they never consume Vercel bandwidth. Do **not** rewrite them through a Function — that converts browser-to-CDN traffic into Vercel Fast Data Transfer for no benefit.
-- Every CDN-loaded module is pinned with a Subresource Integrity hash in the import map (`sha384`, cross-verified against jsdelivr's published file hashes before use), so a compromised or MITM'd response for an already-allowed origin fails closed instead of executing.
+- The 9 import-map modules are pinned with a Subresource Integrity hash in the import map (`sha384`, cross-verified against jsdelivr's published file hashes before use), so a compromised or MITM'd response for an already-allowed origin fails closed instead of executing. The MediaPipe WASM runtime and `.wasm` binary and the `gesture_recognizer.task` model are fetched by MediaPipe's own loader outside the import map, so they can't carry import-map integrity — they come from the same pinned CDN origin, and the model is additionally validated by magic bytes (TFL3/ZIP signature + size floor) and cached with poison eviction.
 - The MediaPipe model is cached in browser `CacheStorage` after first load, with magic-byte validation and poison eviction.
 - Camera permission is requested *before* the ML model downloads, so visitors who decline never pay the download cost.
 - `vercel.json` restricts camera and microphone to the same origin and applies a CSP permitting only the exact external origins in use.

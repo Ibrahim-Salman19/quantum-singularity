@@ -160,6 +160,35 @@ try {
     failed = true;
 }
 
+// 7. Topology & keyboard binding consistency check
+try {
+    const html = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+    // Slider must allow values 0–5
+    if (!html.includes("'shape',    'Morph Topology',  0,   5")) {
+        throw new Error("Topology slider max is not 5");
+    }
+    // Keyboard cases for 5 and 6
+    if (!html.includes("case '5':      morphShapeTo(4)")) {
+        throw new Error("Missing keyboard case for topology 5 (key '5' → morphShapeTo(4))");
+    }
+    if (!html.includes("case '6':      morphShapeTo(5)")) {
+        throw new Error("Missing keyboard case for topology 6 (key '6' → morphShapeTo(5))");
+    }
+    // SHAPE_INFO must have exactly 6 entries (count opening [' sequences)
+    const shapeInfoMatch = html.match(/const SHAPE_INFO = \[([\s\S]*?)\];/);
+    if (!shapeInfoMatch) throw new Error('SHAPE_INFO not found');
+    const entryCount = (shapeInfoMatch[1].match(/\['/g) || []).length;
+    if (entryCount !== 6) throw new Error(`SHAPE_INFO has ${entryCount} entries, expected 6`);
+    // morphShapeTo clamp must be 5
+    if (!html.includes('clamp(target, 0, 5)')) {
+        throw new Error('morphShapeTo clamp is not (0, 5)');
+    }
+    console.log('✔ Topology & keyboard binding consistency (6 topologies): PASS');
+} catch (err) {
+    console.error('✘ Topology consistency check: FAIL -', err.message);
+    failed = true;
+}
+
 if (failed) {
     console.error('\nSTATIC AUDIT FAILED!');
     process.exit(1);

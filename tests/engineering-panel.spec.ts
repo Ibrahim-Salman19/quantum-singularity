@@ -11,6 +11,9 @@ import { test, expect } from '@playwright/test';
  */
 
 async function boot(page) {
+  // Full-app boots are heavy under software rasterisation; give each test a
+  // generous budget so a slow CI runner surfaces real failures, not timeouts.
+  test.setTimeout(120000);
   await page.addInitScript(() => {
     try { localStorage.setItem('qs_guide_dismissed_v4', '1'); } catch (e) {}
   });
@@ -94,7 +97,7 @@ test.describe('GPU / performance stats HUD', () => {
     await page.click('#stats-btn');
     await expect(page.locator('#stats-btn')).toHaveAttribute('aria-pressed', 'true');
     // The readout updates on the same 600ms throttle as the FPS counter.
-    await expect(hudMode).toContainText(/GPU \d|draw calls/, { timeout: 5000 });
+    await expect(hudMode).toContainText(/GPU \d|draw calls/, { timeout: 15000 });
 
     await page.click('#stats-btn');
     await expect(page.locator('#stats-btn')).toHaveAttribute('aria-pressed', 'false');
@@ -107,7 +110,7 @@ test.describe('GPU / performance stats HUD', () => {
     // composer.render() reported 1. autoReset is now owned by the render loop.
     await page.click('#stats-btn');
     await expect
-      .poll(async () => page.locator('#hud-mode').textContent(), { timeout: 5000 })
+      .poll(async () => page.locator('#hud-mode').textContent(), { timeout: 15000 })
       .toMatch(/GPU \d|draw calls/);
 
     const calls = await page.evaluate(() => {

@@ -1,6 +1,6 @@
 {
   "name": "quantum-singularity",
-  "version": "5.2.0",
+  "version": "5.2.1",
   "type": "module",
   "private": true,
   "description": "Interactive WebGL 2 particle simulation with on-device hand gesture and live microphone control",
@@ -9,10 +9,10 @@
   "homepage": "https://animation-zeta-rosy.vercel.app/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/devhms/handgesture_animation.git"
+    "url": "git+https://github.com/Ibrahim-Salman19/quantum-singularity.git"
   },
   "bugs": {
-    "url": "https://github.com/devhms/handgesture_animation/issues"
+    "url": "https://github.com/Ibrahim-Salman19/quantum-singularity/issues"
   },
   "keywords": [
     "webgl",
@@ -27,15 +27,15 @@
     "glsl"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
     "test": "node scripts/static_audit.js && npx playwright test",
     "test:static": "node scripts/static_audit.js",
     "test:e2e": "npx playwright test",
-    "test:fast": "npx playwright test tests/gesture-recognition.spec.ts tests/gesture-state.spec.ts tests/dom.spec.ts tests/accessibility.spec.ts",
-    "test:gpu": "npx playwright test tests/engineering-panel.spec.ts tests/webgl.spec.ts tests/shader-compile.spec.ts tests/camera-pipeline.spec.ts tests/audio-reactivity.spec.ts",
-    "test:ci": "node scripts/static_audit.js && npx playwright test tests/gesture-recognition.spec.ts tests/gesture-state.spec.ts tests/dom.spec.ts tests/accessibility.spec.ts tests/engineering-panel.spec.ts tests/webgl.spec.ts"
+    "test:fast": "npx playwright test tests/gesture-recognition.spec.ts tests/gesture-state.spec.ts tests/dom.spec.ts tests/accessibility.spec.ts tests/topologies.spec.ts tests/url-state.spec.ts",
+    "test:gpu": "npx playwright test tests/engineering-panel.spec.ts tests/webgl.spec.ts tests/shader-compile.spec.ts tests/camera-pipeline.spec.ts tests/visibility-suspend.spec.ts tests/audio-reactivity.spec.ts tests/audio-bands-4.spec.ts",
+    "test:ci": "node scripts/static_audit.js && npx playwright test tests/gesture-recognition.spec.ts tests/gesture-state.spec.ts tests/dom.spec.ts tests/accessibility.spec.ts tests/engineering-panel.spec.ts tests/webgl.spec.ts tests/audio-bands-4.spec.ts tests/topologies.spec.ts tests/url-state.spec.ts tests/visibility-suspend.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1"

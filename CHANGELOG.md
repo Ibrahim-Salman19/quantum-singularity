@@ -1,5 +1,23 @@
 # Quantum Singularity - Changelog
 
+## [5.2.1] - 2026-08-17 (Production-Readiness Hardening)
+
+### Added
+- **Hopf Fibration & Lorenz Manifold topologies** (topology 5 & 6, keys `5`/`6`): two new GPU-procedural shapes join the disk/lotus/tesseract/attractor set; the topology slider, keyboard bindings, preset buttons, and `morphShapeTo` clamp all extend to six shapes, with a static-audit check guarding the consistency of every binding.
+- **Four-band audio DSP**: the audio pipeline splits the spectrum into sub-bass / mid-bass / mids / treble with fixed Hz boundaries computed once per stream, giving the field a fuller spectral response than the previous two-band split.
+- **URL hash state sharing** (`C` key / hash links): the current topology, palette, and slider values serialize to a parseable `#t=..&p=..` hash on demand, and load-time hash values are applied with strict validation (invalid values silently ignored).
+- **New Playwright suites**: `tests/audio-bands-4.spec.ts`, `tests/topologies.spec.ts`, `tests/url-state.spec.ts`, and `tests/visibility-suspend.spec.ts` (19 tests) wired into `test:fast`/`test:gpu`/`test:ci` so CI executes the whole suite; full suite is now 79 tests across 13 suites.
+- **Security headers**: `Strict-Transport-Security`, `X-Frame-Options: DENY`, and `Cross-Origin-Opener-Policy: same-origin` added to `vercel.json`.
+- **`.vercelignore`**: restricts static deploys to the app shell and assets (docs, tests, scripts, legacy `v1`-`v5` directories, and local tooling no longer upload).
+- **`manifest.json`** gained a stable `id`; `package.json` engines corrected to Node >= 20 and repository/bugs URLs pointed at the real origin.
+
+### Fixed
+- **Test suite flake-hardening**: animation-dependent assertion windows (morph titles, GPU stats readout, clipboard HUD, "Waiting for a hand") widened from 5s to 15–60s and full-app boots given 120s budgets, so a slow CI runner (software rasterisation) surfaces real failures instead of timeouts. These windows were passing on idle machines and failing under load with rotating, environment-only timeouts.
+- **Camera and microphone were not torn down on tab hide** (documented contract said "full teardown on tab hide"): switching tabs left the camera LED and microphone live with only inference paused. The `visibilitychange` handler now fully stops both streams on hide and re-acquires them on return *only if* the visitor had them on at hide time (a stopped `MediaStreamTrack` cannot be restarted, so restore re-runs the guarded enable paths). Regression-guarded by `tests/visibility-suspend.spec.ts`, which drives the real camera through a simulated hidden/visible cycle.
+- **Hash palette could be force-set to 0**: `applyHashState` coerced a missing `p` parameter to `Number(null) === 0`, which passed the integer/range check and rewrote the swatches. The raw parameter is now null-guarded like the slider paths.
+- **Bloom could blow out past the slider maximum**: audio pulse + mid-bass swell on top of a maxed bloom slider produced an unclamped strength; the target is now clamped to the slider ceiling.
+- **Docs overclaimed SRI coverage**: README/ARCHITECTURE now scope the "pinned with Subresource Integrity" claim to the nine import-map modules and state honestly that the MediaPipe WASM runtime and model load outside the import map (model still magic-byte validated).
+
 ## [5.2.0] - 2026-08-10 (Audio Input, Engineering Panel, GPU Profiling)
 
 ### Added

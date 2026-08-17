@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('WebGL 2 & Shader Canvas Tests', () => {
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(120000);
     await page.addInitScript(() => {
       localStorage.setItem('qs_guide_dismissed_v4', '1');
     });

@@ -10,6 +10,9 @@ import { POSES, makeHand } from './fixtures/hand-poses.mjs';
  */
 
 async function boot(page) {
+  // Full-app boots are heavy under software rasterisation; give each test a
+  // generous budget so a slow CI runner surfaces real failures, not timeouts.
+  test.setTimeout(120000);
   await page.addInitScript(() => {
     try { localStorage.setItem('qs_guide_dismissed_v4', '1'); } catch (e) {}
   });

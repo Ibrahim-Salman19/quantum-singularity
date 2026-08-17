@@ -10,8 +10,8 @@ test.describe('Camera & Gesture Backend Pipeline', () => {
     test.setTimeout(120000);
     page.on('pageerror', (e) => { throw new Error(`pageerror: ${e.message}`); });
 
-    await page.goto('/', { waitUntil: 'load', timeout: 30000 });
-    await page.waitForFunction(() => window.__qsReady === true, { timeout: 20000 });
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
+    await page.waitForFunction(() => window.__qsReady === true, { timeout: 45000 });
 
     const guideVisible = await page.locator('#guide-overlay').isVisible();
     if (guideVisible) await page.click('#modal-launch');
@@ -32,7 +32,7 @@ test.describe('Camera & Gesture Backend Pipeline', () => {
     // tracking active" briefly, so poll generously.
     await expect
       .poll(async () => page.locator('#nstatus').textContent(), {
-        timeout: 30000,
+        timeout: 60000,
         message: 'status should settle on "Waiting for a hand"'
       })
       .toContain('Waiting for a hand');
@@ -40,14 +40,14 @@ test.describe('Camera & Gesture Backend Pipeline', () => {
 
   test('camera toggle round-trips back to off and resets the status', async ({ page }) => {
     test.setTimeout(120000);
-    await page.goto('/', { waitUntil: 'load', timeout: 30000 });
-    await page.waitForFunction(() => window.__qsReady === true, { timeout: 20000 });
+    await page.goto('/', { waitUntil: 'load', timeout: 60000 });
+    await page.waitForFunction(() => window.__qsReady === true, { timeout: 45000 });
 
     const guideVisible = await page.locator('#guide-overlay').isVisible();
     if (guideVisible) await page.click('#modal-launch');
 
     await expect
-      .poll(async () => page.locator('#camera-toggle').textContent(), { timeout: 90000 })
+      .poll(async () => page.locator('#camera-toggle').textContent(), { timeout: 150000 })
       .toContain('Disable camera');
 
     await page.click('#camera-toggle');

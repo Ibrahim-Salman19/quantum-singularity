@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "Quantum Singularity — WebGL Particle Field",
   "short_name": "Quantum Singularity",
   "description": "Interactive WebGL 2 particle simulation with on-device hand gesture and live microphone control.",
