@@ -1,5 +1,18 @@
 # Quantum Singularity - Changelog
 
+## [5.3.0] - 2026-08-19 (Low-End PC Optimization, Lower Initial Bloom, AI Discovery)
+
+### Added
+- **Low-End PC & Software Renderer Probing**: `probeGPUInfo()` inspects `UNMASKED_RENDERER_WEBGL` via `WEBGL_debug_renderer_info` to detect unaccelerated software rasterizers (`SwiftShader`, `llvmpipe`, `Microsoft Basic Render Driver`, `VirtualBox`, `VMware`, `Mesa`) and integrated GPUs (`Intel HD/UHD Graphics`).
+- **`ultraLowTier` Hardware Profile**: Automatically triggers on software rendering, $\le 2\text{GB}$ RAM, or $\le 2$ CPU cores, capping particles to 28,000 (18,000 on mobile), clamping DPR strictly to 1.0, and capping ML inference to 12 FPS so CPU threads remain available for WebGL rasterization.
+- **Conditional Bloom Pass Bypass**: When bloom intensity approaches zero (`targetBloom <= 0.01`), `bloomPass.enabled = false` is applied, allowing `EffectComposer` to skip the 5 mip-level downsample/upsample passes entirely and eliminate 5+ render target switches per frame.
+- **8-Bit Render Target Fallback**: On ultra-low tier and software renderers, HDR render targets fall back to 8-bit `THREE.UnsignedByteType` targets, saving 50% memory bandwidth and avoiding half-float texture format emulation overhead.
+- **Fragment Shader ALU Bypass**: `CinematicShader` now guards film grain evaluation (`if (uGrain > 0.001)`), skipping integer PCG hash arithmetic and two `pow()` gamma-space conversions per pixel on low-spec hardware.
+- **AI Agent Discovery & Schema.org JSON-LD**: Comprehensive `@graph` structured data added to `index.html` alongside standardized `/llms.txt`, `/llms-full.txt`, and `/pricing.md` endpoints with CORS headers in `vercel.json`.
+
+### Changed
+- **Lower Initial Bloom Baseline**: Reduced default bloom intensity from `1.05` to `0.45` (`0.28–0.38` on low tiers), calibrated `UnrealBloomPass` radius to `0.25` and threshold to `0.85`, and tuned audio pulse flash multipliers (`0.22` and `0.14`) to eliminate visual glare.
+
 ## [5.2.1] - 2026-08-17 (Production-Readiness Hardening)
 
 ### Added

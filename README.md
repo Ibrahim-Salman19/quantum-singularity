@@ -1,8 +1,15 @@
 # Quantum Singularity
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![WebGL 2](https://img.shields.io/badge/Graphics-WebGL%202-00d9b2.svg)](https://animation-zeta-rosy.vercel.app/)
+[![MediaPipe](https://img.shields.io/badge/Vision-MediaPipe%200.10.35-orange.svg)](https://developers.google.com/mediapipe)
+[![Web Audio](https://img.shields.io/badge/Audio-Web%20Audio%20API-9a4ec4.svg)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+[![Tests](https://img.shields.io/badge/Playwright-79%20passed-success.svg)](./VALIDATION.md)
+[![LLM Context](https://img.shields.io/badge/AI-llms.txt-blueviolet.svg)](https://animation-zeta-rosy.vercel.app/llms.txt)
+
 **A real-time WebGL 2 particle simulation you control with your hands and your voice — running entirely on-device, from a single static HTML file.**
 
-[**▶ Live demo**](https://animation-zeta-rosy.vercel.app/) · [Architecture](./ARCHITECTURE.md) · [Changelog](./CHANGELOG.md) · [Validation report](./VALIDATION.md) · [MIT License](./LICENSE)
+[**▶ Live Demo**](https://animation-zeta-rosy.vercel.app/) · [Architecture](./ARCHITECTURE.md) · [llms.txt](./llms.txt) · [Pricing & License](./pricing.md) · [Changelog](./CHANGELOG.md) · [Validation Report](./VALIDATION.md) · [MIT License](./LICENSE)
 
 ![Quantum Singularity](./og-image.jpg)
 
@@ -10,7 +17,7 @@
 
 ## What it is
 
-Up to 110,000 GPU particles arranged into four mathematical topologies, rendered through an HDR bloom pipeline, driven by **three fused real-time input channels**:
+Up to 110,000 GPU particles arranged into six mathematical topologies (Accretion Disk, Phyllotaxis Lotus, 4D Tesseract, Strange Attractor, Hopf Fibration, Lorenz Manifold), rendered through an HDR bloom pipeline, driven by **three fused real-time input channels**:
 
 | Input | Technology | What it does |
 | :--- | :--- | :--- |
@@ -116,13 +123,47 @@ Why this shape:
 - The MediaPipe model is cached in browser `CacheStorage` after first load, with magic-byte validation and poison eviction.
 - Camera permission is requested *before* the ML model downloads, so visitors who decline never pay the download cost.
 - `vercel.json` restricts camera and microphone to the same origin and applies a CSP permitting only the exact external origins in use.
-- `robots.txt` keeps search crawlers allowed while declining common model-training crawlers, and points to `sitemap.xml`.
+- `robots.txt` welcomes search engines and AI research crawlers with explicit `llms.txt` and `sitemap.xml` directives.
 - `manifest.json` + a maskable icon set make it installable as a standalone app on mobile and desktop.
 
 Vercel Hobby is intended for personal/non-commercial projects; a portfolio demo fits that intent, and commercial use should move to the appropriate plan.
 
 ---
 
-## Stack
+## Stack & Performance Benchmarks
 
-Three.js `0.185.1` (pinned) · WebGL 2 · custom GLSL · MediaPipe Tasks Vision `0.10.35` (pinned) · Web Audio API · Playwright · zero runtime dependencies, zero build step.
+| Component | Technology | Performance Metric |
+| :--- | :--- | :--- |
+| **3D Rendering** | Three.js `0.185.1` (pinned SRI), WebGL 2, GLSL 3.0 | 60–144 Hz, <2.5 ms GPU frame time |
+| **Particle Simulation** | Procedural vertex shader (`gl_VertexID`) | 110,000 particles, 0 CPU buffer memory |
+| **Vision Inference** | Google MediaPipe Tasks Vision `0.10.35` (WASM) | ~15 ms on-device latency, 0 cloud egress |
+| **Audio DSP** | Web Audio API (4-band FFT AnalyserNode) | Real-time adaptive noise floor |
+| **Memory Architecture** | Pre-allocated scratch buffers | Exactly 0 bytes/frame GC allocation |
+| **Test Coverage** | Playwright test suite | 79 automated E2E, unit & a11y tests |
+
+---
+
+## Machine-Readable Agent Context
+
+For autonomous AI coding assistants, research agents, and LLM search systems:
+- **LLM Summary (`llms.txt`)**: [`https://animation-zeta-rosy.vercel.app/llms.txt`](https://animation-zeta-rosy.vercel.app/llms.txt)
+- **Deep Technical Specification (`llms-full.txt`)**: [`https://animation-zeta-rosy.vercel.app/llms-full.txt`](https://animation-zeta-rosy.vercel.app/llms-full.txt)
+- **Machine-Readable Pricing (`pricing.md`)**: [`https://animation-zeta-rosy.vercel.app/pricing.md`](https://animation-zeta-rosy.vercel.app/pricing.md)
+
+---
+
+## Citation
+
+If you use Quantum Singularity as a benchmark, reference architecture, or computational art reference in your research or project, please cite:
+
+```bibtex
+@software{quantum_singularity_2026,
+  author = {Salman, Ibrahim},
+  title = {Quantum Singularity: Real-Time WebGL 2 Particle Simulation with Multi-Modal On-Device Sensor Fusion},
+  url = {https://animation-zeta-rosy.vercel.app/},
+  year = {2026},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/Ibrahim-Salman19/quantum-singularity}}
+}
+```

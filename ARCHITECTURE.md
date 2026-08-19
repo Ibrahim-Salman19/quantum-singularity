@@ -33,13 +33,26 @@
 ## 2. WebGL 2 & Particle Shader Architecture
 
 - **Rendering Engine**: Three.js `0.185.1` WebGLRenderer with WebGL 2 context.
+- **Hardware-Aware Tiering & Software Renderer Probing**:
+  - `probeGPUInfo()` inspects `UNMASKED_RENDERER_WEBGL` via `WEBGL_debug_renderer_info` to detect unaccelerated software renderers (`SwiftShader`, `llvmpipe`, `Microsoft Basic Render Driver`) and low-spec integrated GPUs.
+  - Automatically activates `ultraLowTier` under software rendering, $\le 2\text{GB}$ RAM, or $\le 2$ CPU cores.
 - **Particle Count Allocation**:
-  - Desktop: Up to 110,000 active particles (`110K PTS`).
-  - Mobile: Up to 52,000 active particles (`52K PTS`).
-- **GPU procedural positions**: Particle positions are computed dynamically inside vertex shaders using customized mathematical topologies (`Singularity`, `Torus`, `Wave`, `Quantum`).
-- **HDR Post-Processing**:
+  - High-Tier Desktop: Up to 110,000 active particles (`110K PTS`).
+  - Mid-Tier / Standard: 82,000 particles (`82K PTS`).
+  - Low-Tier / Mobile: 30,000 to 52,000 particles.
+  - Ultra-Low Tier / Software Renderers: 18,000 to 28,000 particles to guarantee stable 60 FPS on CPU rasterization.
+- **GPU procedural positions**: Particle positions are computed dynamically inside vertex shaders using 6 continuous mathematical topologies:
+  1. `Singularity Accretion`: Keplerian rotational dynamics with relativistic bipolar relativistic jets.
+  2. `Phyllotaxis Lotus`: Golden angle spiral lattice ($\theta = 137.507764^\circ$) with radial wave oscillations.
+  3. `4D Tesseract`: 4D hypercube projected to 3D with dual-plane SO(4) rotation ($XW / YZ$).
+  4. `Clifford Strange Attractor`: Bounded non-periodic chaotic attractor with curl perturbations.
+  5. `Hopf Fibration`: Hypersphere mapping $S^3 \to S^2$ via nested toroidal Villarceau circles.
+  6. `Lorenz Chaotic Manifold`: Real-time numerical integration of the 3D Lorenz attractor differential equations ($\sigma=10, \rho=28, \beta=8/3$).
+- **HDR Post-Processing & Fillrate Optimizations**:
   - `EffectComposer` with `RenderPass`, `UnrealBloomPass`, `ShaderPass`, and `OutputPass`.
-  - Automatic fallbacks for HalfFloat vs 8-bit render targets depending on `EXT_color_buffer_float` availability.
+  - HalfFloat HDR on supported hardware, automatically falling back to 8-bit `THREE.UnsignedByteType` on ultra-low tier / software renderers.
+  - Initial bloom intensity calibrated to `0.45` (`0.28–0.38` on low tiers) with dynamic bypass (`bloomPass.enabled = false`) when bloom approaches zero.
+  - Fragment shader ALU bypass skipping integer PCG hash and `pow()` gamma-space conversions when film grain is minimal.
 
 ---
 

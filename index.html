@@ -27,6 +27,115 @@
     <meta name="twitter:description" content="A real-time WebGL 2 particle simulation driven by hand gestures and live sound, entirely on-device.">
     <meta name="twitter:image" content="https://animation-zeta-rosy.vercel.app/og-image.jpg">
     <link rel="canonical" href="https://animation-zeta-rosy.vercel.app/">
+    <meta name="keywords" content="webgl2, particle simulation, mediapipe, hand gesture recognition, audio reactive, shader art, hopf fibration, lorenz attractor, phyllotaxis, generative art, real-time gpu computing, threejs, computer vision, on-device ml">
+    <meta name="author" content="Ibrahim Salman">
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Context">
+    <link rel="alternate" type="text/plain" href="/llms-full.txt" title="Full LLM Documentation">
+    <link rel="alternate" type="text/markdown" href="/pricing.md" title="Pricing & Licensing">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://animation-zeta-rosy.vercel.app/#website",
+          "url": "https://animation-zeta-rosy.vercel.app/",
+          "name": "Quantum Singularity",
+          "description": "Real-time on-device WebGL 2 particle simulation with MediaPipe hand gestures, Web Audio API FFT audio reactivity, and 6 procedural topologies.",
+          "inLanguage": "en-US"
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://animation-zeta-rosy.vercel.app/#application",
+          "name": "Quantum Singularity",
+          "url": "https://animation-zeta-rosy.vercel.app/",
+          "applicationCategory": "MultimediaApplication",
+          "operatingSystem": "All (Modern Web Browsers with WebGL 2)",
+          "browserRequirements": "Requires WebGL 2, Web Audio API, and optional WebRTC getUserMedia",
+          "softwareVersion": "5.3.0",
+          "offers": {
+            "@type": "Offer",
+            "price": "0.00",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          },
+          "featureList": [
+            "Up to 110,000 procedural GPU particles with zero CPU buffer overhead",
+            "6 continuous mathematical topologies (Accretion Disk, Phyllotaxis Lotus, 4D Tesseract, Strange Attractor, Hopf Fibration, Lorenz Manifold)",
+            "On-device neural & geometric sensor fusion for hand tracking via MediaPipe Tasks Vision",
+            "4-band real-time audio FFT DSP with continuous adaptive noise-floor calibration",
+            "HDR bloom, aspect-ratio corrected chromatic aberration, and gamma-space grain synthesis",
+            "Zero-allocation hot path with 0 GC pause frames",
+            "Full keyboard accessibility and WCAG AA contrast compliance"
+          ],
+          "author": {
+            "@type": "Person",
+            "name": "Ibrahim Salman",
+            "url": "https://github.com/Ibrahim-Salman19"
+          },
+          "license": "https://opensource.org/licenses/MIT",
+          "codeRepository": "https://github.com/Ibrahim-Salman19/quantum-singularity"
+        },
+        {
+          "@type": "TechArticle",
+          "@id": "https://animation-zeta-rosy.vercel.app/#tech-article",
+          "headline": "Quantum Singularity: Procedural GPU Particle Simulation with On-Device Gesture & Audio Fusion",
+          "description": "In-depth engineering documentation of high-performance WebGL 2 procedural shaders, dual-signal MediaPipe sensor fusion, and frame-rate independent physics.",
+          "articleSection": "Computer Graphics & Machine Learning",
+          "keywords": ["WebGL 2", "MediaPipe", "Web Audio API", "Particle Simulation", "Hopf Fibration", "Lorenz Attractor", "Creative Coding", "Sensor Fusion", "Zero GC"],
+          "about": [
+            { "@type": "Thing", "name": "WebGL 2" },
+            { "@type": "Thing", "name": "Procedural Particle Physics" },
+            { "@type": "Thing", "name": "MediaPipe Hand Landmark Detection" },
+            { "@type": "Thing", "name": "Web Audio API FFT DSP" }
+          ],
+          "author": {
+            "@type": "Person",
+            "name": "Ibrahim Salman",
+            "url": "https://github.com/Ibrahim-Salman19"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://animation-zeta-rosy.vercel.app/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How does Quantum Singularity simulate 110,000 particles with zero CPU overhead?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Quantum Singularity derives all particle 3D coordinates entirely within the GLSL vertex shader using procedural mathematical functions parameterized by the particle vertex ID (gl_VertexID) and elapsed time. Because positions are calculated on the GPU, zero bytes of position buffer arrays are uploaded from CPU to GPU each frame."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does on-device hand gesture tracking work in Quantum Singularity?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Quantum Singularity fuses two independent classifiers on-device: Google MediaPipe's neural model (running via WebAssembly) and an orientation-invariant geometric landmark analyzer measuring finger joint flexion and palm-normal vectors. Their scores are blended with dynamic quality weighting and temporal state machine hysteresis, running 100% locally with zero cloud egress."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What mathematical topologies are featured in Quantum Singularity?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The simulation features six dynamic topological manifolds: Keplerian Accretion Disk, Phyllotaxis Lotus (golden angle spiral at 137.508 degrees), 4D Tesseract hypercube projection, Clifford Strange Attractor, Hopf Fibration (mapping 3-sphere to 2-sphere), and the Lorenz Chaotic Manifold."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does the audio reactivity work in real-time?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The Web Audio API AnalyserNode splits live microphone input into four psychoacoustic frequency bands: Sub-Bass (20-60 Hz), Bass (60-250 Hz), Mid (250-2000 Hz), and Treble (2000-8000 Hz). An exponential moving average automatically calibrates to the room ambient noise floor for adaptive beat detection without manual sensitivity sliders."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080a0a'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%238fcbb8' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%238fcbb8'/%3E%3Cpath d='M8 32h14M42 32h14' stroke='%238fcbb8' stroke-width='2' opacity='.55'/%3E%3C/svg%3E">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
@@ -1095,6 +1204,11 @@
     </style>
 </head>
 <body>
+<noscript>
+    <div style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#0c100f;color:#edf1ee;padding:16px 24px;border-bottom:1px solid #8fcbb8;font-family:sans-serif;text-align:center;">
+        <strong>Quantum Singularity</strong> &mdash; WebGL 2 GPU Particle Simulation. Please enable JavaScript in your browser to experience the real-time simulation and on-device gesture tracking. Read technical specifications at <a href="/llms.txt" style="color:#8fcbb8;">llms.txt</a> and <a href="/ARCHITECTURE.md" style="color:#8fcbb8;">ARCHITECTURE.md</a>.
+    </div>
+</noscript>
 
 <!-- Interface -->
 <div id="ui" aria-label="Simulation controls">
@@ -1411,20 +1525,76 @@ const isMobile = coarsePointerQuery.matches || innerWidth <= 768;
 const deviceMemory = Number(navigator.deviceMemory || 4);
 const logicalCores = Number(navigator.hardwareConcurrency || 4);
 const saveData = Boolean(navigator.connection?.saveData);
-const lowTier = saveData || deviceMemory <= 4 || logicalCores <= 4;
+
+// Probe GPU backend & software renderer information to protect low-end PCs without GPUs.
+function probeGPUInfo() {
+    let isSoftware = false;
+    let isIntegrated = false;
+    let rendererName = '';
+    try {
+        const probe = document.createElement('canvas');
+        const gl = probe.getContext('webgl2', { powerPreference: 'high-performance' }) ||
+                   probe.getContext('webgl', { powerPreference: 'high-performance' });
+        if (gl) {
+            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            if (debugInfo) {
+                rendererName = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '';
+            }
+            gl.getExtension('WEBGL_lose_context')?.loseContext();
+        }
+    } catch (_) {}
+    if (/SwiftShader|llvmpipe|Software|Basic Render|Microsoft Basic|VirtualBox|VMware|Mesa/i.test(rendererName)) {
+        isSoftware = true;
+    } else if (/Intel|HD Graphics|UHD Graphics|Iris|Mali|Adreno|PowerVR/i.test(rendererName)) {
+        isIntegrated = true;
+    }
+    return { isSoftware, isIntegrated, rendererName };
+}
+const gpuInfo = probeGPUInfo();
+const isSoftwareGPU = gpuInfo.isSoftware;
+const isIntegratedGPU = gpuInfo.isIntegrated;
+
+// Tier classifications:
+// ultraLowTier: Software rendering (SwiftShader/llvmpipe/VM) or severe hardware constraints (<=2GB RAM or <=2 cores or mobile saveData)
+// lowTier: integrated/budget GPU, <=4GB RAM, <=4 cores, or saveData
+// midTier: 4-8 cores / 4-8GB RAM
+const ultraLowTier = isSoftwareGPU || (deviceMemory <= 2 && logicalCores <= 2) || (saveData && isMobile);
+const lowTier = ultraLowTier || saveData || isIntegratedGPU || deviceMemory <= 4 || logicalCores <= 4;
 const midTier = !lowTier && (deviceMemory <= 8 || logicalCores <= 8);
 
+// Initial bloom intensity: refined to a soft, glare-free baseline (down from 1.05)
+// that drastically reduces fillrate overhead on integrated GPUs and low-end PCs.
+const INITIAL_BLOOM = ultraLowTier ? 0.28 : (lowTier ? 0.38 : 0.45);
+
 // Allocate once at the safe ceiling, then adjust draw ranges dynamically.
-const N = isMobile ? (lowTier ? 32000 : 52000) : (lowTier ? 56000 : midTier ? 82000 : 110000);
-const SN = isMobile ? (lowTier ? 1200 : 2000) : (lowTier ? 2200 : 3800);
-const DPR_CAP = isMobile ? (lowTier ? 1.2 : 1.6) : (lowTier ? 1.35 : midTier ? 1.8 : 2.0);
-const TARGET_FPS = isMobile ? 50 : 58;
-const INFERENCE_FPS_CAP = isMobile ? 20 : (lowTier ? 20 : 26);
+// On ultra-low tier (software renderer / low-end PC without dedicated GPU), cap N at 28k
+// so CPU rasterization stays silky smooth at 60 FPS without jank.
+const N = isMobile 
+    ? (ultraLowTier ? 18000 : lowTier ? 30000 : 52000) 
+    : (ultraLowTier ? 28000 : lowTier ? 48000 : midTier ? 82000 : 110000);
+
+const SN = isMobile 
+    ? (ultraLowTier ? 400 : lowTier ? 1000 : 2000) 
+    : (ultraLowTier ? 700 : lowTier ? 1600 : midTier ? 2800 : 3800);
+
+// On low-end / no GPU PCs, high DPR kills fillrate. Cap DPR tightly.
+const DPR_CAP = isMobile 
+    ? (ultraLowTier ? 1.0 : lowTier ? 1.15 : 1.6) 
+    : (ultraLowTier ? 1.0 : lowTier ? 1.25 : midTier ? 1.75 : 2.0);
+
+const TARGET_FPS = isMobile ? 50 : (ultraLowTier ? 50 : 58);
+const INFERENCE_FPS_CAP = isMobile 
+    ? (ultraLowTier ? 12 : 20) 
+    : (ultraLowTier ? 12 : lowTier ? 18 : 26);
+
 // Baseline that camera teardown restores to, so repeated enable/disable cycles
 // cannot permanently ratchet the inference rate down.
-const baselineInferenceFPS = saveData ? 12 : Math.min(INFERENCE_FPS_CAP, isMobile ? 18 : 24);
+const baselineInferenceFPS = saveData || ultraLowTier 
+    ? 12 
+    : Math.min(INFERENCE_FPS_CAP, isMobile ? 18 : 24);
+
 let currentInferenceFPS = baselineInferenceFPS;
-let adaptiveScale = saveData ? 0.78 : 1.0;
+let adaptiveScale = saveData ? 0.75 : (ultraLowTier ? 0.80 : (lowTier ? 0.90 : 1.0));
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -1441,7 +1611,7 @@ const approach = (current, target, k, dt) => {
     const t = 1 - Math.pow(1 - Math.min(0.999, k), dt * 60);
     return current + (target - current) * t;
 };
-const effectiveDPR = () => clamp((window.devicePixelRatio || 1) * adaptiveScale, 0.7, DPR_CAP);
+const effectiveDPR = () => clamp((window.devicePixelRatio || 1) * adaptiveScale, ultraLowTier ? 0.65 : 0.7, DPR_CAP);
 
 function supportsWebGL2() {
     try {
@@ -1696,10 +1866,13 @@ orbit.enablePan      = false;
 // WebGL2 does not guarantee render-to-float support on every GPU. Prefer
 // half-float HDR when a color-buffer float extension is available, otherwise
 // fall back to an 8-bit render target instead of risking an incomplete FBO.
+// On ultra-low tier (software renderer / low-end PC without GPU), use 8-bit targets to conserve VRAM/bandwidth.
 const gl = renderer.getContext();
 const supportsHDRColorBuffer = Boolean(
-    gl.getExtension('EXT_color_buffer_float') ||
-    gl.getExtension('EXT_color_buffer_half_float')
+    !ultraLowTier && (
+        gl.getExtension('EXT_color_buffer_float') ||
+        gl.getExtension('EXT_color_buffer_half_float')
+    )
 );
 const renderTargetType = supportsHDRColorBuffer ? THREE.HalfFloatType : THREE.UnsignedByteType;
 
@@ -1716,9 +1889,9 @@ composer.addPass(renderPass);
 
 const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(innerWidth, innerHeight),
-    0.85,
-    0.32,
-    0.82
+    INITIAL_BLOOM,
+    ultraLowTier ? 0.20 : 0.25,
+    ultraLowTier ? 0.88 : 0.85
 );
 composer.addPass(bloomPass);
 
@@ -1785,15 +1958,17 @@ const CinematicShader = {
             // PCG-style integer hash: avoids the sin()*43758 transcendental which
             // hits every pixel every frame at full resolution. floatBitsToUint is
             // pure bitwise arithmetic -- same perceptual quality, lower ALU cost.
-            uvec2 q = uvec2(gl_FragCoord.xy) ^ uvec2(floatBitsToUint(uTime * 0.71));
-            q.x ^= q.y * 1664525u + 1013904223u;
-            q.x ^= q.x >> 16u;
-            q.x *= 0x45d9f3bu;
-            q.x ^= q.x >> 16u;
-            float noise = (float(q.x & 0xffffffu) / float(0xffffffu)) - 0.5;
-            vec3 enc = pow(max(col, vec3(0.0)), vec3(1.0 / 2.2));
-            enc += noise * uGrain;
-            col = pow(max(enc, vec3(0.0)), vec3(2.2));
+            if (uGrain > 0.001) {
+                uvec2 q = uvec2(gl_FragCoord.xy) ^ uvec2(floatBitsToUint(uTime * 0.71));
+                q.x ^= q.y * 1664525u + 1013904223u;
+                q.x ^= q.x >> 16u;
+                q.x *= 0x45d9f3bu;
+                q.x ^= q.x >> 16u;
+                float noise = (float(q.x & 0xffffffu) / float(0xffffffu)) - 0.5;
+                vec3 enc = pow(max(col, vec3(0.0)), vec3(1.0 / 2.2));
+                enc += noise * uGrain;
+                col = pow(max(enc, vec3(0.0)), vec3(2.2));
+            }
 
             fragColor = vec4(col, 1.0);
         }
@@ -2208,7 +2383,7 @@ scene.add(stars);
 // ═══════════════════════════════════════════
 const uiV = {
     shape:0, scale:18, gravity:1.15, jetPower:0.85, chaos:0.18, speed:0.55,
-    palette:0, psize:2.25, bloom:1.05
+    palette:0, psize:2.25, bloom:INITIAL_BLOOM
 };
 const DEFAULTS = { ...uiV };
 let shapeTween = null;
@@ -2279,7 +2454,7 @@ mkSlider('cg-jetpower','jetPower', 'Jet Energy',      0,   3,    0.85);
 mkSlider('cg-chaos',   'chaos',    'Curl Chaos',      0,   2,    0.18);
 mkSlider('cg-speed',   'speed',    'Time Warp',       0.2, 2.0,  0.55);
 mkSlider('cg-psize',   'psize',    'Particle Scale',  0.4, 2.8,  2.25);
-mkSlider('cg-bloom',   'bloom',    'Bloom Intensity', 0.0, 2.5,  1.05);
+mkSlider('cg-bloom',   'bloom',    'Bloom Intensity', 0.0, 2.5,  INITIAL_BLOOM);
 
 // ── URL hash state: read once at startup ───────────────────────────────────────
 // Hash schema: #t=0&p=2&sc=18&g=1.15&jp=0.85&ch=0.18&sp=0.55&ps=2.25&bl=1.05
@@ -4126,13 +4301,14 @@ function fpsTargets() {
 }
 
 function applyRenderScale(nextScale, force = false) {
-    const next = clamp(nextScale, 0.58, 1.0);
+    const minScale = ultraLowTier ? 0.48 : 0.58;
+    const next = clamp(nextScale, minScale, 1.0);
     // Compare against the clamped value, and treat "already at the requested
     // boundary" as applied. The old dead-zone check compared post-clamp deltas
     // against a 0.03 threshold, which made the 1.0 ceiling and 0.58 floor
     // unreachable from 0.98/0.60 while still arming a multi-second cooldown.
     if (!force && next === adaptiveScale) return false;
-    if (!force && Math.abs(next - adaptiveScale) < 0.03 && next !== 1.0 && next !== 0.58) return false;
+    if (!force && Math.abs(next - adaptiveScale) < 0.03 && next !== 1.0 && next !== minScale) return false;
     adaptiveScale = next;
     const dpr = effectiveDPR();
     renderer.setPixelRatio(dpr);
@@ -4144,14 +4320,15 @@ function applyRenderScale(nextScale, force = false) {
     partMat.uniforms.uPixel.value = dpr;
     partMat.uniforms.uViewportHeight.value = Math.max(1, innerHeight * dpr);
 
-    const detail = clamp((adaptiveScale - 0.58) / 0.42, 0, 1);
-    const particleRatio = lerp(isMobile ? 0.58 : 0.62, 1.0, detail);
-    const starRatio = lerp(0.52, 1.0, detail);
-    const activeParticles = Math.max(12000, Math.floor(N * particleRatio));
+    const detail = clamp((adaptiveScale - minScale) / (1.0 - minScale), 0, 1);
+    const particleRatio = lerp(isMobile ? (ultraLowTier ? 0.45 : 0.58) : (ultraLowTier ? 0.48 : 0.62), 1.0, detail);
+    const starRatio = lerp(ultraLowTier ? 0.38 : 0.52, 1.0, detail);
+    const minParticles = ultraLowTier ? 8000 : (lowTier ? 12000 : 16000);
+    const activeParticles = Math.max(minParticles, Math.floor(N * particleRatio));
     geo.setDrawRange(0, activeParticles);
-    sgeo.setDrawRange(0, Math.max(500, Math.floor(SN * starRatio)));
-    currentInferenceFPS = Math.round(lerp(isMobile ? 11 : 13, INFERENCE_FPS_CAP, detail));
-    if (neuralBackend === 'main') currentInferenceFPS = Math.min(currentInferenceFPS, isMobile ? 12 : 15);
+    sgeo.setDrawRange(0, Math.max(200, Math.floor(SN * starRatio)));
+    currentInferenceFPS = Math.round(lerp(isMobile ? (ultraLowTier ? 8 : 11) : (ultraLowTier ? 9 : 13), INFERENCE_FPS_CAP, detail));
+    if (neuralBackend === 'main') currentInferenceFPS = Math.min(currentInferenceFPS, isMobile ? 10 : 14);
 
     // Scale the post-processing cost with quality, not just the resolution.
     updateCinematicQuality(detail);
@@ -4164,9 +4341,9 @@ function applyRenderScale(nextScale, force = false) {
 // Recomputed only when quality or the motion preference changes, rather than being
 // rebuilt from scratch on every single frame.
 function updateCinematicQuality(detail) {
-    const reduced = reducedMotionQuery.matches;
-    cinPass.uniforms.uCA.value = reduced ? 0.0006 : lerp(0.0012, 0.003, detail);
-    cinPass.uniforms.uGrain.value = reduced ? 0.005 : lerp(0.006, 0.018, detail);
+    const reduced = reducedMotionQuery.matches || ultraLowTier;
+    cinPass.uniforms.uCA.value = reduced ? 0.0004 : lerp(0.0008, 0.0028, detail);
+    cinPass.uniforms.uGrain.value = reduced ? 0.003 : lerp(0.005, 0.016, detail);
 }
 
 function adaptiveQualityHint(reason) {
@@ -4180,19 +4357,20 @@ function adaptiveQualityHint(reason) {
 
 function evaluateAdaptiveQuality(now) {
     const elapsed = now - qualityWindowStart;
-    if (elapsed < 2500) return;
+    if (elapsed < (ultraLowTier ? 1800 : 2500)) return;
     const avgFps = qualityWindowFrames * 1000 / Math.max(1, elapsed);
     if (now >= qualityCooldownUntil) {
         const { low, high } = fpsTargets();
-        if (avgFps < low && adaptiveScale > 0.58) {
+        const minScale = ultraLowTier ? 0.48 : 0.58;
+        if (avgFps < low && adaptiveScale > minScale) {
             // Only arm the cooldown if the step was actually applied; otherwise a
             // no-op re-ran every few seconds forever.
             if (applyRenderScale(adaptiveScale - (avgFps < low - 10 ? 0.12 : 0.075))) {
-                qualityCooldownUntil = now + 3200;
+                qualityCooldownUntil = now + (ultraLowTier ? 2200 : 3200);
             }
         } else if (avgFps > high && adaptiveScale < 1.0) {
             if (applyRenderScale(adaptiveScale + 0.035)) {
-                qualityCooldownUntil = now + 5200;
+                qualityCooldownUntil = now + (ultraLowTier ? 4200 : 5200);
             }
         }
     }
@@ -4290,8 +4468,12 @@ function animate(now = performance.now()) {
     cinPass.uniforms.uTime.value = simTime;
     // Pulse (onset transient) + mid-bass swell both drive bloom so kick hits AND
     // bass guitar create a visible flash without competing with each other.
-    const targetBloom = clamp(uiV.bloom + audioPulse * 0.28 + audioMidBassSmooth * 0.18, 0, 3);
+    const targetBloom = clamp(uiV.bloom + audioPulse * 0.22 + audioMidBassSmooth * 0.14, 0, 3);
     if (bloomPass.strength !== targetBloom) bloomPass.strength = targetBloom;
+    // Fillrate optimization for low-end / no-GPU / software renderers:
+    // When bloom is near zero, disable UnrealBloomPass so EffectComposer completely skips the 5 mip passes.
+    const shouldEnableBloom = targetBloom > 0.01;
+    if (bloomPass.enabled !== shouldEnableBloom) bloomPass.enabled = shouldEnableBloom;
 
     setInfo(Math.min(5, Math.max(0, Math.round(uiV.shape))));
     stars.rotation.y = reducedMotionQuery.matches ? 0 : simTime * 0.009;

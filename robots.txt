@@ -1,6 +1,9 @@
-# Preserve portfolio/search discoverability while declining model-training crawlers.
+# Quantum Singularity — Robots Configuration
+# Optimized for high search engine visibility and AI agent discovery.
+
+# Allow all AI search engines and autonomous research agents
 User-agent: GPTBot
-Disallow: /
+Allow: /
 
 User-agent: OAI-SearchBot
 Allow: /
@@ -9,7 +12,7 @@ User-agent: ChatGPT-User
 Allow: /
 
 User-agent: ClaudeBot
-Disallow: /
+Allow: /
 
 User-agent: Claude-SearchBot
 Allow: /
@@ -17,13 +20,32 @@ Allow: /
 User-agent: Claude-User
 Allow: /
 
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+# Disallow aggressive scrapers with no attribution/citation mechanisms
 User-agent: CCBot
 Disallow: /
 
 User-agent: Bytespider
 Disallow: /
 
+# Allow all standard web search crawlers (Googlebot, Bingbot, Applebot, DuckDuckBot, etc.)
 User-agent: *
 Allow: /
 
+# Sitemaps & Agent Endpoints
 Sitemap: https://animation-zeta-rosy.vercel.app/sitemap.xml
+Sitemap: https://animation-zeta-rosy.vercel.app/llms.txt

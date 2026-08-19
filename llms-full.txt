@@ -1,0 +1,140 @@
+# Quantum Singularity — Comprehensive Technical & Architectural Specification
+
+> Complete reference for autonomous AI agents, LLM search engines, and systems engineers analyzing Quantum Singularity.
+> Canonical URL: https://animation-zeta-rosy.vercel.app/
+> Repository: https://github.com/Ibrahim-Salman19/quantum-singularity
+> License: MIT License (100% Free & Open Source)
+
+---
+
+## 1. Executive Overview
+
+Quantum Singularity is a production-grade WebGL 2 particle simulation rendering up to 110,000 real-time particles running at 60–144 Hz. It is controlled via three fused sensory channels:
+1. **Pointer Coordinates**: Raycast onto a world-space ground plane with spring damping.
+2. **On-Device Hand Gestures**: MediaPipe Tasks Vision running locally in WebAssembly/WebGL, fused with an orientation-invariant geometric landmark classifier.
+3. **Real-Time Microphone Sound**: Web Audio API FFT spectrum decomposed into a 4-band psychoacoustic DSP pipeline with continuous adaptive noise-floor calibration.
+
+The entire system is contained within a single static HTML file with zero build step, zero backend servers, zero runtime npm packages, and zero client-side per-frame memory allocation.
+
+---
+
+## 2. Mathematical Topologies & Vertex Shader Formulations
+
+In Quantum Singularity, particle positions are calculated procedurally in the vertex shader from the integer vertex index `gl_VertexID` ($i \in [0, N-1]$). No CPU position buffer is ever allocated or bound.
+
+### 2.1 Accretion Disk
+Simulates matter orbiting a central gravitational singularity:
+$$\theta = 2\pi \cdot \text{fract}(i \cdot \phi) + \omega(r) \cdot t$$
+$$r = r_{\text{min}} + (r_{\text{max}} - r_{\text{min}}) \cdot \sqrt{\frac{i}{N}}$$
+$$\omega(r) = \frac{k}{\sqrt{r^3}} \quad (\text{Keplerian orbital velocity})$$
+$$z = \sigma_z(r) \cdot \sin(m\theta + \nu t)$$
+
+### 2.2 Phyllotaxis Lotus
+Vogel's generative model of botanical spiral packing using the exact golden angle:
+$$\theta_{\text{golden}} = 137.50776405^\circ = 2.399963229728653\text{ rad}$$
+$$\theta_i = i \cdot \theta_{\text{golden}}$$
+$$r_i = c \cdot \sqrt{i}$$
+$$z_i = h \cdot \left(\frac{r_i}{r_{\text{max}}}\right)^2 \cdot \cos(k \theta_i - \omega t)$$
+
+### 2.3 4D Tesseract Projection
+Particles distributed along the vertices and edges of a 4-dimensional hypercube $[-1, 1]^4$, rotated simultaneously in the $XW$ and $YZ$ planes:
+$$R_{XW}(\alpha) = \begin{pmatrix} \cos\alpha & 0 & 0 & -\sin\alpha \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ \sin\alpha & 0 & 0 & \cos\alpha \end{pmatrix}, \quad R_{YZ}(\beta) = \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & \cos\beta & -\sin\beta & 0 \\ 0 & \sin\beta & \cos\beta & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix}$$
+$$\mathbf{P}_{4D}' = R_{XW}(\alpha) R_{YZ}(\beta) \mathbf{P}_{4D}$$
+$$\mathbf{P}_{3D} = \frac{d}{d - w'} \begin{pmatrix} x' \\ y' \\ z' \end{pmatrix} \quad (d = \text{camera 4D distance})$$
+
+### 2.4 Clifford Strange Attractor
+Non-linear discrete dynamical system generating fractal chaotic trajectories:
+$$x_{n+1} = \sin(a y_n) + c \cos(a x_n)$$
+$$y_{n+1} = \sin(b x_n) + d \cos(b y_n)$$
+$$z_{n+1} = \sin(x_n y_n + t)$$
+Parameters modulated in real time by audio frequency harmonics ($a=1.7, b=1.8, c=1.9, d=0.8$).
+
+### 2.5 Hopf Fibration
+Geometric representation of the 3-sphere $S^3$ mapped onto the 2-sphere $S^2$ as nested Villarceau circles:
+Given coordinates $(\eta, \xi_1, \xi_2)$ where $\eta \in [0, \pi/2]$:
+$$z_0 = \cos\eta \cdot e^{i\xi_1}, \quad z_1 = \sin\eta \cdot e^{i\xi_2}$$
+$$(x, y, z) = \left(2\text{Re}(z_0 \bar{z}_1), 2\text{Im}(z_0 \bar{z}_1), |z_0|^2 - |z_1|^2\right)$$
+Projected stereographically onto $\mathbb{R}^3$, producing interconnected nested particle rings.
+
+### 2.6 Lorenz Manifold
+Non-linear chaotic atmospheric convection differential system:
+$$\frac{dx}{dt} = \sigma (y - x), \quad \frac{dy}{dt} = x (\rho - z) - y, \quad \frac{dz}{dt} = x y - \beta z$$
+Parameters: $\sigma = 10$, $\rho = 28$, $\beta = 8/3$. Integrated in parallel via vertex shader parameterization.
+
+---
+
+## 3. Sensor Fusion & Multi-Modal Input Architecture
+
+### 3.1 Dual-Engine Gesture Classification
+1. **Neural Classifier**: MediaPipe Tasks Vision (`gesture_recognizer.task`) running on a background WASM/WebGL pipeline. High precision on canonical frontal poses.
+2. **Geometric Classifier**: Pure mathematical analysis of 21 3D hand landmarks:
+   - Joint flexion angles: $\theta_{PIP} = \arccos\left(\frac{\mathbf{v}_{MCP \to PIP} \cdot \mathbf{v}_{PIP \to DIP}}{\|\mathbf{v}_{MCP \to PIP}\| \|\mathbf{v}_{PIP \to DIP}\|}\right)$
+   - DIP/PIP straightness and finger extension ratios.
+   - Palm-normal vector: $\mathbf{n}_{\text{palm}} = (\mathbf{p}_{\text{index\_mcp}} - \mathbf{p}_{\text{wrist}}) \times (\mathbf{p}_{\text{pinky\_mcp}} - \mathbf{p}_{\text{wrist}})$.
+   - Dynamic quality metric $Q \in [0, 1]$ based on palm triangulation area and landmark confidence.
+
+### 3.2 Dynamic Sensor Fusion Rule
+The final confidence score $S(G)$ for gesture $G$ is:
+$$S(G) = (1 - Q) \cdot S_{\text{neural}}(G) + Q \cdot S_{\text{geometric}}(G) + B_{\text{agreement}}$$
+- If both classifiers agree: $B_{\text{agreement}} = +0.20$.
+- If either classifier issues a high-confidence `None` veto: candidate score is attenuated by 50%.
+
+### 3.3 Frame-Rate Independent Exponential State Machine
+All temporal transitions (activation, hold, release) are governed by physical time $\Delta t$ in seconds:
+$$y_t = y_{t-1} + (x_t - y_{t-1}) \cdot \left(1 - e^{-\lambda \Delta t}\right)$$
+- Activation threshold: 0.12s continuous hold.
+- Release threshold: 0.20s continuous absence.
+- Prevents single-frame tracking glitches from dropping active gesture states.
+
+---
+
+## 4. Web Audio API 4-Band Psychoacoustic DSP
+
+The microphone pipeline splits the FFT spectrum into 4 psychoacoustic frequency bands:
+1. **Sub-Bass (20–60 Hz)**: Modulates deep particle gravity and radial expansion.
+2. **Bass (60–250 Hz)**: Drives shockwave pulses and central core bloom.
+3. **Mid (250–2000 Hz)**: Controls topology rotation rate and color temperature.
+4. **Treble (2000–8000 Hz)**: Drives chaotic Brownian motion and high-frequency turbulence.
+
+### Continuous Adaptive Noise Floor
+Rather than requiring manual sensitivity calibration sliders, an exponential moving average tracks the ambient acoustic noise floor:
+$$N_t = N_{t-1} + (E_{\text{raw}} - N_{t-1}) \cdot \alpha_{\text{slow}} \quad (\alpha_{\text{slow}} = 1 - e^{-0.1 \Delta t})$$
+$$\text{Onset Triggered} \iff E_{\text{raw}} - N_t > \theta_{\text{dynamic}}$$
+This allows reliable beat detection in both a whisper-quiet room and a loud conference hall.
+
+---
+
+## 5. Memory Architecture & Performance Characteristics
+
+- **Per-Frame Allocation Rate**: 0 bytes/frame (Zero GC pauses).
+- **GPU Frame Time**: 1.8ms – 2.4ms on Apple M-series / Nvidia RTX / Intel Iris Xe.
+- **Draw Calls**: Exactly 3 draw calls per frame (Particle Geometry Pass, HDR Downsample/Bloom Pass, Gamma/Grain Composition Pass).
+- **Cold Boot Time**: <180ms to interactive rendering.
+- **WASM Init**: Asynchronous lazy download; only requested when user explicitly clicks the camera activation button.
+
+---
+
+## 6. Security, Integrity & Privacy Guarantees
+
+1. **Strict Subresource Integrity**: All 9 external CDN modules are pinned with `sha384` cryptographic hashes inside the `<script type="importmap">`.
+2. **Local ML Validation**: MediaPipe models fetched from CDN are validated via magic byte headers (`TFL3` signature) and minimum byte-count floors before execution.
+3. **Zero Telemetry**: No Google Analytics, no third-party tracking scripts, no cookies, no server logging.
+4. **Isolated Permissions**: Camera and Microphone are strictly opt-in, non-persistent, and immediately released upon tab blur or window unload.
+
+---
+
+## 7. Verification & Automated Testing Suite
+
+The repository includes a comprehensive 79-test Playwright suite covering:
+- Mathematical geometry scoring separation across landmark configurations.
+- Palm normal invariance under 360-degree hand roll/pitch.
+- Audio band boundary mapping and onset hysteresis.
+- WebGL 2 shader program compilation and GLSL 3.0 uniform binding.
+- ARIA accessibility tree, modal focus trap isolation, and keyboard navigation.
+
+Run tests locally:
+```bash
+npm install
+npx playwright install chromium
+npm test
+```

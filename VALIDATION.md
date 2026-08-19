@@ -53,7 +53,7 @@ The v5.2 release adds a **third real-time input channel** (Web Audio microphone 
 | **Camera Permission** | Explicit user action | Explicit user action | Explicit user action |
 | **Memory Allocations** | Low | High (per-frame Bitmaps & Blobs) | Zero GC per-frame allocations |
 
-## Automated Test Suite (Playwright, 59 tests)
+## Automated Test Suite (Playwright, 79 tests across 13 suites)
 
 | Suite | Coverage | Result |
 | :--- | :--- | :--- |
@@ -65,6 +65,11 @@ The v5.2 release adds a **third real-time input channel** (Web Audio microphone 
 | `webgl.spec.ts` (3) | WebGL 2 context, FPS HUD, focus mode | **PASS** |
 | `audio-reactivity.spec.ts` (9) | Idle UI state, band-bin mapping and clamping, band level extraction, adaptive onset firing/cooldown, full enable/disable round trip, stale-session race regression | **PASS** |
 | `engineering-panel.spec.ts` (9) | Modal focus trap, `inert` background isolation, mutual exclusion with the guide modal, live stat binding, GPU/draw-call readout toggle, multi-pass draw-call counting regression | **PASS** |
+| `audio-bands-4.spec.ts` (7) | 4-band FFT DSP bin mapping (sub-bass, bass, mid, treble), multi-band extraction, dynamic range clamping, zero-allocation buffers | **PASS** |
+| `topologies.spec.ts` (6) | 6 procedural topologies (Singularity, Lotus, Tesseract, Attractor, Hopf, Lorenz), morph tweens, UI preset sync, keyboard mappings 1–6 | **PASS** |
+| `url-state.spec.ts` (6) | Hash serialization, URL state restoration, chaos/scale clamping, C-key clipboard copy, invalid hash resilience | **PASS** |
+| `visibility-suspend.spec.ts` (5) | Page visibility API, rAF suspension on background tab, context resume, camera/mic teardown on tab hide | **PASS** |
+| `shader-compile.spec.ts` (2) | WebGL 2 GLSL 3.0 shader compilation, integer PCG hash, floatBitsToUint, uniform locations | **PASS** |
 
 ## Audio Reactivity Subsystem (v5.2)
 

@@ -1,0 +1,53 @@
+# Quantum Singularity
+
+> Real-time WebGL 2 particle simulation with multi-modal on-device sensor fusion (MediaPipe hand gestures + Web Audio API FFT), running at 60–144 Hz from a single static HTML file with zero runtime dependencies.
+
+Quantum Singularity is a production-grade computational art piece and systems engineering reference for high-performance browser graphics, procedural vertex shader computation, and zero-latency on-device machine learning.
+
+## Quick Links
+
+- [Live Demo](https://animation-zeta-rosy.vercel.app/): Interactive WebGL 2 simulation in browser.
+- [Full Documentation (llms-full.txt)](https://animation-zeta-rosy.vercel.app/llms-full.txt): Complete technical specification and mathematical derivations.
+- [Architecture](https://animation-zeta-rosy.vercel.app/ARCHITECTURE.md): Deep dive into GPU pipeline, state machines, and DSP.
+- [Validation Report](https://animation-zeta-rosy.vercel.app/VALIDATION.md): Playwright test results and browser compatibility matrix.
+- [Changelog](https://animation-zeta-rosy.vercel.app/CHANGELOG.md): Historical record of architectural iterations.
+- [Licensing & Pricing](https://animation-zeta-rosy.vercel.app/pricing.md): 100% Free & Open Source under MIT License.
+- [Source Code](https://github.com/Ibrahim-Salman19/quantum-singularity): GitHub repository.
+
+## Core Technical Highlights
+
+- **110,000 Procedural GPU Particles**: Positions are never computed on the CPU. Derived entirely in GLSL vertex shaders from particle index (`gl_VertexID`) across 6 topologies, eliminating 1.3 MB of redundant memory uploads per frame.
+- **Seeded Fisher-Yates Spatial Decorrelation**: Particle index buffer is shuffled at boot so dynamic LOD quality reductions thin the field uniformly without clipping topological boundaries.
+- **Dual-Signal Sensor Fusion**: Blends MediaPipe neural landmarks (BlazePalm / HandLandmarker) with a hand-written orientation-invariant geometric classifier, dynamically weighted by palm-normal quality.
+- **Frame-Rate Independent State Machine**: All easing and gesture hysteresis use exponential approach ($1 - e^{-\lambda \Delta t}$) calibrated in seconds, behaving identically at 30 Hz, 60 Hz, and 144 Hz.
+- **4-Band Adaptive Noise-Floor Audio DSP**: Web Audio API FFT mapped to Sub-bass (20–60 Hz), Bass (60–250 Hz), Mid (250–2000 Hz), and Treble (2000–8000 Hz) with adaptive onset detection that calibrates continuously to room ambient noise.
+- **Zero-Allocation Hot Path**: Zero per-frame memory allocations (`requestAnimationFrame` garbage collection rate: 0 bytes/frame).
+- **100% On-Device Privacy**: Camera and microphone streams are strictly opt-in and processed locally via WASM / WebGL. No telemetry, no external server requests.
+
+## Mathematical Topologies
+
+1. **Accretion Disk**: Keplerian orbital rotation with relativistic radial decay and turbulent vortex drift.
+2. **Phyllotaxis Lotus**: Vogel mathematical spiral based on the golden angle ($\theta = 137.507764^\circ \approx 2.399963\text{ rad}$) with exponential petal elevation.
+3. **4D Tesseract Projection**: 4D hypercube projected into 3D space via dual orthogonal rotation planes ($XW$ and $YZ$).
+4. **Clifford Strange Attractor**: Chaotic non-linear dynamical system ($x_{n+1} = \sin(ay) + c\cos(ax)$).
+5. **Hopf Fibration**: Continuous map from 3-sphere $S^3$ to 2-sphere $S^2$ forming nested Villarceau torus links.
+6. **Lorenz Manifold**: Classic chaotic atmospheric convection system ($\dot{x} = \sigma(y - x)$, $\dot{y} = x(\rho - z) - y$, $\dot{z} = xy - \beta z$).
+
+## Keyboard Controls
+
+- `H`: Toggle in-app Interactive Guide modal.
+- `B`: Toggle Engineering & Architecture panel.
+- `P`: Toggle Live Performance & GPU Profiling HUD.
+- `F`: Toggle Focus Mode (minimalist HUD hiding).
+- `R`: Reset simulation parameters and topologies.
+- `1` - `6`: Instantly morph between the 6 mathematical topologies.
+- `Space`: Pause / Resume physics simulation.
+- `Esc`: Dismiss open modal dialogs.
+
+## Technology Stack
+
+- **Graphics**: Three.js `0.185.1` (pinned SRI sha384), WebGL 2, custom GLSL 3.0 shaders.
+- **Machine Learning**: Google MediaPipe Tasks Vision `0.10.35` (WASM + TFLite on-device).
+- **Audio Processing**: Web Audio API (AnalyserNode FFT with 4-band psychoacoustic DSP).
+- **Testing**: Playwright automated test suite (79 tests across unit, integration, and a11y specs).
+- **Packaging**: Zero build tools, single static HTML bundle, subresource integrity verification.
