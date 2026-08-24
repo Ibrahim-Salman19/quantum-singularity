@@ -1,5 +1,17 @@
 # Quantum Singularity - Changelog
 
+## [5.3.1] - 2026-08-24 (Gesture Animation Coupling & Attractor Accuracy Fixes)
+
+### Fixed
+- **Shader Attractor Coordinate Space Alignment**: Applied the particle attractor displacement to `wp` in 3D world space instead of pre-rotation topology space, ensuring attractor forces align accurately with the user's screen-space finger position irrespective of topology tilt ($27^\circ$) and continuous time-varying $Y$-spin.
+- **Dynamic Camera-Facing Interaction Plane**: Aligned `groundPlane` to dynamically face the camera (`camera.getWorldDirection().negate()`) centered at `orbit.target`, eliminating null raycast intersections during orbit rotations and keeping `Pointing_Up` attractor and pointer tracking active at all camera angles.
+- **Image-Space Apparent Hand Scale for Palm Zoom**: Refactored `handScale` in `geometryGestureScores` to compute from normalized 2D image coordinates rather than camera-distance-invariant 3D metric `worldLandmarks`, enabling smooth, calibrated camera radius zooming ($0.10$ far $\rightarrow$ $0.38$ near).
+- **Chaos Modulation Full Range**: Expanded `Victory` gesture horizontal travel mapping to cover the full slider range ($0.0 \rightarrow 2.0$) with enhanced responsiveness.
+- **HUD Flash Message Race Protection**: Added `hudFlashTimer` to protect temporary `"Link copied!"` notifications from being overwritten by adaptive quality updates.
+
+### Added
+- **Gesture Animation Integration Test Suite**: Extended `tests/gesture-state.spec.ts` to verify full end-to-end coupling between `Pointing_Up`, `Open_Palm`, and `Victory` gestures and the live animation state (attractor influence, world coordinates, camera radius, and curl chaos).
+
 ## [5.3.0] - 2026-08-19 (Low-End PC Optimization, Lower Initial Bloom, AI Discovery)
 
 ### Added

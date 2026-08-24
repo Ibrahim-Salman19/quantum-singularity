@@ -2260,18 +2260,18 @@ const VERT = `
         pos += curl(pos, t, 0.018) * (uChaos * uScale * 0.04) * (1.0 + uAudioTreble * 0.8);
         pos *= 1.0 + uAudioBass * 0.05 + uAudioPulse * 0.025;
 
-        if (uHandInfl > 0.005) {
-            vec3 dv  = pos - uHandPos;
-            float dl = length(dv);
-            float f  = uHandInfl * uScale * 2.2 / (dl * dl + uScale + 0.001);
-            pos -= (dv / max(dl, 0.001)) * f * 0.35;
-        }
-
         const float TILT = 0.47124;
         float ct = cos(TILT), st = sin(TILT);
         vec3 rp = vec3(pos.x, pos.y*ct - pos.z*st, pos.y*st + pos.z*ct);
         float sp = t * 0.2, csp = cos(sp), ssp = sin(sp);
         vec3 wp = vec3(rp.x*csp - rp.z*ssp, rp.y, rp.x*ssp + rp.z*csp);
+
+        if (uHandInfl > 0.005) {
+            vec3 dv  = wp - uHandPos;
+            float dl = length(dv);
+            float f  = uHandInfl * uScale * 2.2 / (dl * dl + uScale + 0.001);
+            wp -= (dv / max(dl, 0.001)) * f * 0.35;
+        }
 
         float dist = length(wp);
         float nd   = dist / (uScale * 8.0 + 0.001);
@@ -2657,6 +2657,8 @@ function resolvePointer() {
     mouseNDC.x = (x / innerWidth)  *  2 - 1;
     mouseNDC.y = (y / innerHeight) * -2 + 1;
     raycaster.setFromCamera(mouseNDC, camera);
+    camera.getWorldDirection(tempDir).negate();
+    groundPlane.setFromNormalAndCoplanarPoint(tempDir, orbit.target);
     if (raycaster.ray.intersectPlane(groundPlane, mouseWorldPos)) {
         isMouseActive = true;
         showPointerReticle(x, y);
@@ -2923,16 +2925,14 @@ function geometryGestureScores(normalized, world) {
     const openPalm = clamp01(0.82 * fingerCore + 0.18 * e.thumb);
 
     // --- Distance proxy ----------------------------------------------------
-    // Apparent hand size for palm-driven zoom. Computed from world landmarks when
-    // available (metric, aspect-independent, immune to the camera-resolution skew
-    // that made the old normalized-space value uncalibrated across devices), and
-    // rescaled into the same range the zoom mapping expects.
+    // Apparent hand size in image space for palm-driven zoom. Computed from
+    // normalized landmarks because metric world landmarks do not scale with distance
+    // from the camera.
     let handScale = 0;
-    if (useWorld && palmWidth > 1e-6) {
-        // World palm width is ~0.08-0.10m; map to the normalized-equivalent band.
+    if (normalized?.length === 21 && normalized[0] && normalized[5] && normalized[9] && normalized[17]) {
+        handScale = clamp01(0.65 * dist2(normalized[5], normalized[17]) + 0.35 * dist2(normalized[0], normalized[9]) * 1.55);
+    } else if (useWorld && palmWidth > 1e-6) {
         handScale = clamp01((0.62 * palmWidth + 0.38 * handSpan * 0.62) * 2.05);
-    } else if (normalized?.length === 21) {
-        handScale = 0.65 * dist2(normalized[5], normalized[17]) + 0.35 * dist2(normalized[0], normalized[9]) * 1.55;
     }
 
     // Confidence that the palm is presented face-on enough for the 2D-projected
@@ -3248,8 +3248,8 @@ let gestureFrameAspect = 4 / 3;
 
 // Open_Palm zoom calibration window, expressed in the units produced by
 // geometryGestureScores().handScale.
-const PALM_NEAR_MIN = 0.16;
-const PALM_NEAR_MAX = 0.62;
+const PALM_NEAR_MIN = 0.10;
+const PALM_NEAR_MAX = 0.38;
 
 function resetGestureDynamics() {
     oefPointX.reset(); oefPointY.reset(); oefPalmScale.reset(); oefVictoryX.reset();
@@ -3296,7 +3296,12 @@ function applyGesture(g, lm, ts, handScale, dt) {
         const filteredY = oefPointY.filter(lm[8].y, t);
         handToNDC(filteredX, filteredY, handNDC);
         raycaster.setFromCamera(handNDC, camera);
+        camera.getWorldDirection(tempDir).negate();
+        groundPlane.setFromNormalAndCoplanarPoint(tempDir, orbit.target);
         if (raycaster.ray.intersectPlane(groundPlane, handWorldPos)) {
+            handInfl = approach(handInfl, 1.0, 0.34, dt);
+        } else {
+            handWorldPos.set(handNDC.x, handNDC.y, 0.5).unproject(camera);
             handInfl = approach(handInfl, 1.0, 0.34, dt);
         }
         return;
@@ -3317,8 +3322,8 @@ function applyGesture(g, lm, ts, handScale, dt) {
         // hand in place does not read as horizontal travel.
         const centerX = 1.0 - (lm[8].x + lm[12].x + lm[0].x) / 3;
         const fx = oefVictoryX.filter(centerX, t);
-        const targetChaos = THREE.MathUtils.lerp(0.30, 2.0, clamp01(fx));
-        setSlider('chaos', approach(uiV.chaos, targetChaos, 0.16, dt));
+        const targetChaos = THREE.MathUtils.lerp(0.0, 2.0, clamp01(fx));
+        setSlider('chaos', approach(uiV.chaos, targetChaos, 0.25, dt));
     } else {
         isZoomingActive = false;
     }
@@ -4138,10 +4143,12 @@ window.addEventListener('keydown', (e) => {
             const url = `${location.origin}${location.pathname}#${hash}`;
             navigator.clipboard?.writeText(url).catch(() => {});
             // Brief confirmation flash in the HUD mode display.
-            const hudEl = document.getElementById('hud-mode');
-            const prevText = hudEl.textContent;
-            hudEl.textContent = 'Link copied!';
-            setTimeout(() => { hudEl.textContent = prevText; }, 1800);
+            if (hudFlashTimer) clearTimeout(hudFlashTimer);
+            hudMode.textContent = 'Link copied!';
+            hudFlashTimer = setTimeout(() => {
+                hudFlashTimer = null;
+                if (!statsMode) hudMode.textContent = `AUTO Q${Math.round(adaptiveScale * 100)} / ${supportsHDRColorBuffer ? 'HDR' : 'SDR'}`;
+            }, 1800);
             e.preventDefault();
             break;
         }
@@ -4207,6 +4214,7 @@ window.addEventListener('keydown', (e) => {
 const fpsEl        = document.getElementById('hud-fps');
 const hudMode      = document.getElementById('hud-mode');
 const hudParticles = document.getElementById('hud-particles');
+let hudFlashTimer  = null;
 
 // Wraps EXT_disjoint_timer_query_webgl2 (real GPU time, not the CPU-side
 // renderer.info counters) behind a small pipelined query pool so reading a result
@@ -4365,7 +4373,7 @@ function applyRenderScale(nextScale, force = false) {
     // Scale the post-processing cost with quality, not just the resolution.
     updateCinematicQuality(detail);
 
-    if (!statsMode) hudMode.textContent = `AUTO Q${Math.round(adaptiveScale * 100)} / ${supportsHDRColorBuffer ? 'HDR' : 'SDR'}`;
+    if (!statsMode && !hudFlashTimer) hudMode.textContent = `AUTO Q${Math.round(adaptiveScale * 100)} / ${supportsHDRColorBuffer ? 'HDR' : 'SDR'}`;
     hudParticles.textContent = `${Math.round(activeParticles / 1000)}K PTS`;
     return true;
 }
@@ -4710,6 +4718,16 @@ window.__qsGesture = Object.freeze({
     resetGestureTemporal,
     mediaPipeGestureScores,
     handToNDC,
+    applyGesture,
+    animationState: () => ({
+        handInfl,
+        handWorldPos: { x: handWorldPos.x, y: handWorldPos.y, z: handWorldPos.z },
+        targetCameraRadius,
+        isZoomingActive,
+        chaos: uiV.chaos,
+        uHandInfl: partMat.uniforms.uHandInfl.value,
+        uHandPos: { x: partMat.uniforms.uHandPos.value.x, y: partMat.uniforms.uHandPos.value.y, z: partMat.uniforms.uHandPos.value.z }
+    }),
     THREE,
     groundPlane,
     thresholds: Object.freeze({

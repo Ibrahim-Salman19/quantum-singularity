@@ -15,3 +15,5 @@ v5/
 # Windows-style tmp path literally as a directory name in this environment.
 lighthouse-report.report.*
 C:*/
+.claude/
+

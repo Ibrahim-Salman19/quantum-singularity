@@ -1,6 +1,6 @@
 {
   "name": "quantum-singularity",
-  "version": "5.3.0",
+  "version": "5.3.1",
   "type": "module",
   "private": true,
   "description": "Interactive WebGL 2 particle simulation with on-device hand gesture and live microphone control",
