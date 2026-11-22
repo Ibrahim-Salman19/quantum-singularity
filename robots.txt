@@ -47,5 +47,5 @@ User-agent: *
 Allow: /
 
 # Sitemaps & Agent Endpoints
-Sitemap: https://animation-zeta-rosy.vercel.app/sitemap.xml
-Sitemap: https://animation-zeta-rosy.vercel.app/llms.txt
+Sitemap: https://quantumsingularity.vercel.app/sitemap.xml
+Sitemap: https://quantumsingularity.vercel.app/llms.txt

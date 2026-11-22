@@ -7,7 +7,7 @@
 Up to 110,000 GPU particles that follow your gestures through the webcam, pulse with your music,<br>
 and drift under your mouse, all computed in the browser and with nothing uploaded.
 
-[**▶ Open the live demo**](https://animation-zeta-rosy.vercel.app/) &nbsp;·&nbsp; [How it works](#how-it-works) &nbsp;·&nbsp; [Architecture](./ARCHITECTURE.md) &nbsp;·&nbsp; [Validation report](./VALIDATION.md)
+[**▶ Open the live demo**](https://quantumsingularity.vercel.app/) &nbsp;·&nbsp; [How it works](#how-it-works) &nbsp;·&nbsp; [Architecture](./ARCHITECTURE.md) &nbsp;·&nbsp; [Validation report](./VALIDATION.md)
 
 [![CI](https://github.com/Ibrahim-Salman19/quantum-singularity/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Ibrahim-Salman19/quantum-singularity/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f.svg)](./LICENSE)
@@ -24,7 +24,7 @@ and drift under your mouse, all computed in the browser and with nothing uploade
 
 ## Try it in 30 seconds
 
-1. **Open the [live demo](https://animation-zeta-rosy.vercel.app/)** and move your mouse (or drag a finger). The field bends toward you.
+1. **Open the [live demo](https://quantumsingularity.vercel.app/)** and move your mouse (or drag a finger). The field bends toward you.
 2. **Click "Enable hand control"** and raise a hand to the webcam:
 
    | Gesture | Effect |
@@ -204,4 +204,4 @@ Every module in `src/` except `main.js` is pure, with no DOM access and no Three
 
 [MIT](./LICENSE) © Ibrahim Salman. Built with [Three.js](https://threejs.org/) and [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer).
 
-<sub>Machine-readable summaries for AI agents: [`llms.txt`](https://animation-zeta-rosy.vercel.app/llms.txt) · [`llms-full.txt`](https://animation-zeta-rosy.vercel.app/llms-full.txt)</sub>
+<sub>Machine-readable summaries for AI agents: [`llms.txt`](https://quantumsingularity.vercel.app/llms.txt) · [`llms-full.txt`](https://quantumsingularity.vercel.app/llms-full.txt)</sub>

@@ -6,7 +6,7 @@
   "description": "Real-time WebGL 2 particle instrument you play with your hands and your music: on-device MediaPipe gesture recognition, Web Audio DSP and a procedural GPU particle field",
   "license": "MIT",
   "author": "Ibrahim Salman",
-  "homepage": "https://animation-zeta-rosy.vercel.app/",
+  "homepage": "https://quantumsingularity.vercel.app/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Ibrahim-Salman19/quantum-singularity.git"

@@ -6,11 +6,11 @@ Quantum Singularity is an interactive computational-art piece and an engineering
 
 ## Quick Links
 
-- [Live Demo](https://animation-zeta-rosy.vercel.app/): runs in any current browser with WebGL 2.
-- [Full specification (llms-full.txt)](https://animation-zeta-rosy.vercel.app/llms-full.txt): topologies, gesture pipeline, audio DSP, quality tiers, security and testing, with the real constants from the source.
-- [Architecture](https://animation-zeta-rosy.vercel.app/ARCHITECTURE.md): module map, render pipeline, gesture and audio pipelines.
-- [Validation Report](https://animation-zeta-rosy.vercel.app/VALIDATION.md): test layers, coverage and the regressions they guard.
-- [Changelog](https://animation-zeta-rosy.vercel.app/CHANGELOG.md): release history.
+- [Live Demo](https://quantumsingularity.vercel.app/): runs in any current browser with WebGL 2.
+- [Full specification (llms-full.txt)](https://quantumsingularity.vercel.app/llms-full.txt): topologies, gesture pipeline, audio DSP, quality tiers, security and testing, with the real constants from the source.
+- [Architecture](https://quantumsingularity.vercel.app/ARCHITECTURE.md): module map, render pipeline, gesture and audio pipelines.
+- [Validation Report](https://quantumsingularity.vercel.app/VALIDATION.md): test layers, coverage and the regressions they guard.
+- [Changelog](https://quantumsingularity.vercel.app/CHANGELOG.md): release history.
 - [Source Code](https://github.com/Ibrahim-Salman19/quantum-singularity): GitHub repository, MIT licensed.
 
 ## Core Technical Highlights
