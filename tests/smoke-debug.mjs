@@ -17,7 +17,8 @@ page.on('console', m => console.log(`[${m.type()}]`, m.text()));
 page.on('pageerror', e => console.log('[pageerror]', e.message));
 page.on('requestfailed', r => console.log('[reqfail]', r.url(), r.failure()?.errorText));
 
-await page.goto('http://localhost:8089/', { waitUntil: 'load', timeout: 30000 });
+const target = process.env.QS_URL || 'http://localhost:8089/';
+await page.goto(target, { waitUntil: 'load', timeout: 30000 });
 try {
   await page.waitForFunction(() => window.__qsReady === true, { timeout: 20000 });
   console.log('RESULT: __qsReady = true');

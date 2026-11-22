@@ -9,6 +9,8 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: './tests',
+  // Browser specs only; tests/unit/*.test.js run under `node --test` (npm run test:unit).
+  testMatch: '**/*.spec.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   // CI hosts run WebGL under SwiftShader, which is dramatically slower than a

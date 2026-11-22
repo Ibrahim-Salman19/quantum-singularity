@@ -1,197 +1,268 @@
-import fs from 'fs';
-import path from 'path';
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
+/**
+ * Static audit: fast, dependency-free checks that catch the failure modes a
+ * no-build-step project is most exposed to. There is no bundler to fail on a bad
+ * import, no type checker, and no linker for DOM IDs, so these run before any
+ * browser test and in under a second.
+ *
+ * Usage: node scripts/static_audit.js
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, '..');
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const read = (rel) => fs.readFileSync(path.join(rootDir, rel), 'utf8');
+const exists = (rel) => fs.existsSync(path.join(rootDir, rel));
+
+function walk(dir, ext) {
+    const out = [];
+    for (const entry of fs.readdirSync(path.join(rootDir, dir), { withFileTypes: true })) {
+        const rel = path.posix.join(dir, entry.name);
+        if (entry.isDirectory()) out.push(...walk(rel, ext));
+        else if (rel.endsWith(ext)) out.push(rel);
+    }
+    return out.sort();
+}
+
+const html = read('index.html');
+const srcFiles = walk('src', '.js');
+const srcText = Object.fromEntries(srcFiles.map((f) => [f, read(f)]));
+const allSource = html + '\n' + Object.values(srcText).join('\n');
+
+let failed = 0;
+function check(name, fn) {
+    try {
+        const detail = fn();
+        console.log(`✔ ${name}${detail ? ` (${detail})` : ''}`);
+    } catch (err) {
+        console.error(`✘ ${name}: ${err.message}`);
+        failed++;
+    }
+}
 
 console.log('=== QUANTUM SINGULARITY STATIC AUDIT ===\n');
 
-let failed = false;
-
-// 1. ES Module Syntax Check
-try {
-    const htmlPath = path.join(rootDir, 'index.html');
-    const html = fs.readFileSync(htmlPath, 'utf8');
-    const scriptMatch = html.match(/<script type="module">([\s\S]*?)<\/script>/);
-    if (!scriptMatch) {
-        throw new Error('No <script type="module"> block found in index.html');
+// 1. The page loads external modules only: inline module code would bypass the
+//    syntax check below and the module graph check, and blocks a stricter CSP.
+check('Module entry points', () => {
+    const inline = [...html.matchAll(/<script type="module"(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)];
+    if (inline.some((m) => m[1].trim())) throw new Error('index.html contains an inline module script');
+    for (const [re, rel] of [[/<script type="module" src="([^"]+)"/, 'module script'], [/<link rel="stylesheet" href="(?!https?:)([^"]+)"/, 'local stylesheet']]) {
+        const m = html.match(re);
+        if (!m) throw new Error(`index.html has no ${rel}`);
+        if (!exists(m[1])) throw new Error(`${rel} ${m[1]} does not exist`);
     }
-    const tempFile = path.join('/tmp', `extracted_module_${Date.now()}.mjs`);
-    fs.writeFileSync(tempFile, scriptMatch[1]);
-    execSync(`node --check ${tempFile}`);
-    fs.unlinkSync(tempFile);
-    console.log('✔ ES Module Syntax Check: PASS');
-} catch (err) {
-    console.error('✘ ES Module Syntax Check: FAIL -', err.message);
-    failed = true;
-}
+    return 'src/main.js, src/styles.css';
+});
 
-// 2. Duplicate DOM IDs Check
-try {
-    const htmlPath = path.join(rootDir, 'index.html');
-    const html = fs.readFileSync(htmlPath, 'utf8');
-    const idMatches = [...html.matchAll(/id=["']([^"']+)["']/g)].map(m => m[1]);
-    const counts = {};
-    const duplicates = [];
-    idMatches.forEach(id => {
-        counts[id] = (counts[id] || 0) + 1;
-        if (counts[id] === 2) duplicates.push(id);
-    });
-    if (duplicates.length > 0) {
-        throw new Error(`Found duplicate DOM IDs: ${duplicates.join(', ')}`);
+// 2. Every JS file parses.
+check('JavaScript syntax', () => {
+    const files = [...srcFiles, ...walk('scripts', '.js'), ...walk('tests/unit', '.js'), 'playwright.config.js'];
+    for (const f of files) {
+        try {
+            execFileSync(process.execPath, ['--check', path.join(rootDir, f)], { stdio: 'pipe' });
+        } catch (err) {
+            throw new Error(`${f}\n${String(err.stderr || err.message).trim()}`);
+        }
     }
-    console.log(`✔ Duplicate DOM IDs Check (${idMatches.length} IDs): PASS`);
-} catch (err) {
-    console.error('✘ Duplicate DOM IDs Check: FAIL -', err.message);
-    failed = true;
-}
+    return `${files.length} files`;
+});
 
-// 3. vercel.json Schema/JSON Syntax Check
-try {
-    const vercelPath = path.join(rootDir, 'vercel.json');
-    const content = fs.readFileSync(vercelPath, 'utf8');
-    const parsed = JSON.parse(content);
-    if (!parsed.headers || !Array.isArray(parsed.headers)) {
-        throw new Error('vercel.json missing headers array');
+// 3. Relative imports resolve, and every named import is actually exported.
+//    In the browser a missing named export is a SyntaxError that kills the whole
+//    module graph at load: exactly what a bundler would have caught.
+check('Module graph (imports resolve, named exports exist)', () => {
+    const exportsOf = (text) => {
+        const names = new Set();
+        for (const m of text.matchAll(/export\s+(?:const|let|var|function\*?|async\s+function|class)\s+([A-Za-z_$][\w$]*)/g)) names.add(m[1]);
+        for (const m of text.matchAll(/export\s*\{([^}]*)\}/g)) {
+            for (const part of m[1].split(',')) {
+                const name = part.trim().split(/\s+as\s+/).pop();
+                if (name) names.add(name);
+            }
+        }
+        return names;
+    };
+    let edges = 0;
+    for (const [file, text] of Object.entries(srcText)) {
+        for (const m of text.matchAll(/import\s*(?:\{([^}]*)\}\s*from\s*)?['"](\.{1,2}\/[^'"]+)['"]/g)) {
+            const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), m[2]));
+            if (!(target in srcText)) throw new Error(`${file} imports ${m[2]}, which does not exist`);
+            const available = exportsOf(srcText[target]);
+            for (const part of (m[1] || '').split(',')) {
+                const name = part.trim().split(/\s+as\s+/)[0];
+                if (name && !available.has(name)) throw new Error(`${file} imports { ${name} } from ${m[2]}, which does not export it`);
+            }
+            edges++;
+        }
     }
-    console.log('✔ vercel.json JSON Schema & Headers: PASS');
-} catch (err) {
-    console.error('✘ vercel.json Check: FAIL -', err.message);
-    failed = true;
-}
+    return `${srcFiles.length} modules, ${edges} imports`;
+});
 
-// 4. robots.txt Check
-try {
-    const robotsPath = path.join(rootDir, 'robots.txt');
-    const content = fs.readFileSync(robotsPath, 'utf8');
-    if (!content.includes('User-agent: *')) {
-        throw new Error('robots.txt missing User-agent: * baseline rule');
+// 4. DOM integrity.
+check('Unique DOM IDs', () => {
+    const ids = [...html.matchAll(/\sid=["']([^"']+)["']/g)].map((m) => m[1]);
+    const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+    if (dupes.length) throw new Error(`duplicate IDs: ${[...new Set(dupes)].join(', ')}`);
+    return `${ids.length} IDs`;
+});
+
+check('Every getElementById() target exists', () => {
+    const known = new Set([...html.matchAll(/\sid=["']([^"']+)["']/g)].map((m) => m[1]));
+    // Sliders are built at runtime: mkSlider(container, id, ...) creates #id and #id-v.
+    for (const m of srcText['src/main.js'].matchAll(/mkSlider\(\s*'[^']+'\s*,\s*'([^']+)'/g)) {
+        known.add(m[1]);
+        known.add(`${m[1]}-v`);
     }
-    console.log('✔ robots.txt Verification: PASS');
-} catch (err) {
-    console.error('✘ robots.txt Check: FAIL -', err.message);
-    failed = true;
-}
+    const refs = new Set();
+    for (const text of Object.values(srcText)) {
+        for (const m of text.matchAll(/getElementById\(\s*'([^']+)'\s*\)/g)) refs.add(m[1]);
+    }
+    const missing = [...refs].filter((id) => !known.has(id));
+    if (missing.length) throw new Error(`no element for: ${missing.join(', ')}`);
+    return `${refs.size} references`;
+});
 
-// 5. Import Map SRI Coverage Check
-// Every CDN module URL actually reachable from the module graph -- static "imports"
-// entries, string-literal dynamic import() calls, and the MediaPipe CDN fallback
-// array -- must have a matching "integrity" hash, so a future added dependency
-// can't silently ship without SRI coverage.
-try {
-    const htmlPath = path.join(rootDir, 'index.html');
-    const html = fs.readFileSync(htmlPath, 'utf8');
-
+// 5. Subresource Integrity covers every CDN module the page can load.
+check('Import map SRI coverage', () => {
     const mapMatch = html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
-    if (!mapMatch) throw new Error('No <script type="importmap"> block found');
+    if (!mapMatch) throw new Error('no <script type="importmap"> block');
     const importMap = JSON.parse(mapMatch[1]);
-    if (!importMap.integrity || typeof importMap.integrity !== 'object') {
-        throw new Error('importmap has no "integrity" block');
-    }
-    const integrityKeys = new Set(Object.keys(importMap.integrity));
+    const integrity = importMap.integrity || {};
     const hashPattern = /^sha384-[A-Za-z0-9+/]{64}={0,2}$/;
-    for (const [url, hash] of Object.entries(importMap.integrity)) {
-        if (!hashPattern.test(hash)) {
-            throw new Error(`Malformed integrity hash for ${url}: "${hash}"`);
-        }
+    for (const [url, hash] of Object.entries(integrity)) {
+        if (!hashPattern.test(hash)) throw new Error(`malformed integrity hash for ${url}`);
     }
-
-    // Direct (non-prefix) "imports" entries resolve straight to a URL.
-    const bareSpecifiers = Object.entries(importMap.imports || {}).filter(([spec]) => !spec.endsWith('/'));
-    for (const [spec, url] of bareSpecifiers) {
-        if (!integrityKeys.has(url)) throw new Error(`imports["${spec}"] -> ${url} has no integrity entry`);
+    const covered = (url) => Object.hasOwn(integrity, url);
+    const entries = Object.entries(importMap.imports || {});
+    for (const [spec, url] of entries.filter(([s]) => !s.endsWith('/'))) {
+        if (!covered(url)) throw new Error(`imports["${spec}"] -> ${url} has no integrity entry`);
     }
-
-    // Prefix entries (e.g. "three/addons/") resolve dynamically; find every
-    // string-literal import('three/addons/...') call and resolve it by hand.
-    const prefixEntries = Object.entries(importMap.imports || {}).filter(([spec]) => spec.endsWith('/'));
-    const dynamicImportRe = /import\(\s*['"]([^'"]+)['"]\s*\)/g;
-    let m;
-    while ((m = dynamicImportRe.exec(html))) {
-        const spec = m[1];
-        const prefix = prefixEntries.find(([p]) => spec.startsWith(p));
-        if (!prefix) continue; // not a mapped bare specifier (e.g. a same-origin or external URL import)
-        const resolved = prefix[1] + spec.slice(prefix[0].length);
-        if (!integrityKeys.has(resolved)) {
-            throw new Error(`import('${spec}') -> ${resolved} has no integrity entry`);
-        }
+    // Prefix mappings ("three/addons/") are resolved by hand for every literal import().
+    const prefixes = entries.filter(([s]) => s.endsWith('/'));
+    let dynamic = 0;
+    for (const m of allSource.matchAll(/import\(\s*['"]([^'"]+)['"]\s*\)/g)) {
+        const prefix = prefixes.find(([p]) => m[1].startsWith(p));
+        if (!prefix) continue;
+        const resolved = prefix[1] + m[1].slice(prefix[0].length);
+        if (!covered(resolved)) throw new Error(`import('${m[1]}') -> ${resolved} has no integrity entry`);
+        dynamic++;
     }
-
-    // The MediaPipe CDN fallback array is built from template literals, not string
-    // literals, so it can't be regex-matched generically -- check its two known
-    // mirrors explicitly against the pinned MP_VERSION.
-    const versionMatch = html.match(/const MP_VERSION = '([^']+)'/);
-    if (!versionMatch) throw new Error('MP_VERSION not found');
-    const mpVersion = versionMatch[1];
+    // The MediaPipe mirrors are built from template literals; check them explicitly.
+    const version = srcText['src/main.js'].match(/const MP_VERSION = '([^']+)'/)?.[1];
+    if (!version) throw new Error('MP_VERSION not found in src/main.js');
     for (const origin of ['https://cdn.jsdelivr.net/npm', 'https://unpkg.com']) {
-        const url = `${origin}/@mediapipe/tasks-vision@${mpVersion}/vision_bundle.mjs`;
-        if (!integrityKeys.has(url)) throw new Error(`MediaPipe bundle ${url} has no integrity entry`);
+        const url = `${origin}/@mediapipe/tasks-vision@${version}/vision_bundle.mjs`;
+        if (!covered(url)) throw new Error(`MediaPipe bundle ${url} has no integrity entry`);
     }
+    return `${Object.keys(integrity).length} hashes, ${dynamic} addon imports, MediaPipe ${version}`;
+});
 
-    console.log(`✔ Import Map SRI Coverage Check (${integrityKeys.size} entries): PASS`);
-} catch (err) {
-    console.error('✘ Import Map SRI Coverage Check: FAIL -', err.message);
-    failed = true;
-}
-
-// 6. Manifest & Icon Presence Check
-try {
-    for (const rel of ['manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']) {
-        const p = path.join(rootDir, rel);
-        if (!fs.existsSync(p)) throw new Error(`Missing ${rel}`);
+// 6. Topology count agrees across the slider, keyboard, info table, share links.
+check('Topology consistency (6 topologies)', () => {
+    const main = srcText['src/main.js'];
+    if (!/mkSlider\('cg-shape',\s*'shape',\s*'Morph Topology',\s*0,\s*5\b/.test(main)) throw new Error('topology slider max is not 5');
+    for (let k = 1; k <= 6; k++) {
+        if (!new RegExp(`case '${k}':\\s*morphShapeTo\\(${k - 1}\\)`).test(main)) throw new Error(`key '${k}' is not bound to morphShapeTo(${k - 1})`);
     }
-    const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'manifest.json'), 'utf8'));
+    const info = main.match(/const SHAPE_INFO = \[([\s\S]*?)\n\];/);
+    if (!info) throw new Error('SHAPE_INFO not found');
+    const count = (info[1].match(/^\s*\[/gm) || []).length;
+    if (count !== 6) throw new Error(`SHAPE_INFO has ${count} entries`);
+    if (!main.includes('clamp(target, 0, 5)')) throw new Error('morphShapeTo does not clamp to [0, 5]');
+    if (!/TOPOLOGY_COUNT = 6\b/.test(srcText['src/state/share-link.js'])) throw new Error('share-link TOPOLOGY_COUNT is not 6');
+    return 'slider, keys 1-6, SHAPE_INFO, clamp, share links';
+});
+
+// 7. Deployment: every asset the page or the crawler files reference is shipped.
+//    .vercelignore once excluded *.md while llms.txt linked to the docs, so the
+//    published documentation links all returned 404.
+check('Deploy set (referenced files exist and are not .vercelignored)', () => {
+    const ignore = read('.vercelignore').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+    const toRegex = (glob) => new RegExp('^' + glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*') + '(/|$)');
+    const ignored = (rel) => ignore.some((g) => toRegex(g.replace(/^\/|\/$/g, '')).test(rel));
+
+    const site = JSON.parse(read('package.json')).homepage.replace(/\/$/, '');
+    const refs = new Set();
+    for (const m of html.matchAll(/\s(?:href|src)="([^"]+)"/g)) {
+        if (!/^(https?:|data:|mailto:|#|\/\/)/.test(m[1])) refs.add(m[1].replace(/^\.?\//, ''));
+    }
+    for (const file of ['llms.txt', 'llms-full.txt', 'robots.txt', 'sitemap.xml', 'index.html']) {
+        for (const m of read(file).matchAll(new RegExp(site.replace(/[.]/g, '\\.') + '/([A-Za-z0-9._/-]+)', 'g'))) refs.add(m[1]);
+    }
+    const manifest = JSON.parse(read('manifest.json'));
+    for (const icon of manifest.icons || []) refs.add(icon.src.replace(/^\.?\//, ''));
+
+    for (const rel of refs) {
+        if (!exists(rel)) throw new Error(`${rel} is referenced but does not exist`);
+        if (ignored(rel)) throw new Error(`${rel} is referenced but excluded by .vercelignore`);
+    }
+    for (const rel of srcFiles) if (ignored(rel)) throw new Error(`${rel} is excluded by .vercelignore`);
+    return `${refs.size} referenced files + ${srcFiles.length} modules`;
+});
+
+// 8. Hosting config and crawler files.
+check('vercel.json headers', () => {
+    const cfg = JSON.parse(read('vercel.json'));
+    if (!Array.isArray(cfg.headers)) throw new Error('missing headers array');
+    const global = cfg.headers.find((h) => h.source === '/(.*)');
+    const keys = new Set((global?.headers || []).map((h) => h.key));
+    for (const k of ['Content-Security-Policy', 'Strict-Transport-Security', 'X-Content-Type-Options', 'Permissions-Policy']) {
+        if (!keys.has(k)) throw new Error(`global headers missing ${k}`);
+    }
+    for (const h of cfg.headers) {
+        const files = h.source.match(/^\/\(([^)]+)\)$/)?.[1];
+        if (!files || files === '.*') continue;
+        for (const f of files.split('|')) if (!exists(f)) throw new Error(`header rule targets ${f}, which does not exist`);
+    }
+    return 'CSP, HSTS, nosniff, Permissions-Policy';
+});
+
+check('Strict CSP (no inline script without a pinned hash)', () => {
+    // script-src carries no 'unsafe-inline'. The only executable inline script is
+    // the import map, allowed by its SHA-256. Editing the import map without
+    // updating vercel.json would blank the production site while every local test
+    // still passed (the dev server sends no CSP), so the hash is enforced here.
+    const csp = JSON.parse(read('vercel.json')).headers
+        .find((h) => h.source === '/(.*)').headers
+        .find((h) => h.key === 'Content-Security-Policy').value;
+    const scriptSrc = csp.split(';').map((d) => d.trim()).find((d) => d.startsWith('script-src ')) || '';
+    if (scriptSrc.includes("'unsafe-inline'")) throw new Error("script-src allows 'unsafe-inline'");
+    if (/'unsafe-eval'/.test(scriptSrc)) throw new Error("script-src allows 'unsafe-eval'");
+    const allowed = new Set([...scriptSrc.matchAll(/'sha256-([A-Za-z0-9+/=]+)'/g)].map((m) => m[1]));
+    let hashed = 0;
+    for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+        const [, attrs, body] = m;
+        if (/\bsrc=/.test(attrs) || /type="application\/ld\+json"/.test(attrs)) continue;
+        const digest = createHash('sha256').update(body, 'utf8').digest('base64');
+        if (!allowed.has(digest)) {
+            throw new Error(`inline <script${attrs}> is not allowed by the CSP; add 'sha256-${digest}' to script-src`);
+        }
+        hashed++;
+    }
+    const handler = html.match(/<[a-z][^>]*\son[a-z]+\s*=\s*["'][^>]*>/i);
+    if (handler) throw new Error(`inline event handler would be blocked by the CSP: ${handler[0].slice(0, 80)}`);
+    if (/javascript:/i.test(html)) throw new Error('javascript: URL would be blocked by the CSP');
+    return `${hashed} inline script pinned by hash, 0 inline handlers`;
+});
+
+check('robots.txt, sitemap, manifest and icons', () => {
+    if (!read('robots.txt').includes('User-agent: *')) throw new Error('robots.txt has no User-agent: * rule');
+    const manifest = JSON.parse(read('manifest.json'));
     for (const field of ['name', 'short_name', 'start_url', 'display', 'icons']) {
         if (!(field in manifest)) throw new Error(`manifest.json missing "${field}"`);
     }
-    if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
-        throw new Error('manifest.json has no icons');
+    for (const rel of ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'og-image.jpg', 'sitemap.xml']) {
+        if (!exists(rel)) throw new Error(`missing ${rel}`);
     }
-    const htmlPath = path.join(rootDir, 'index.html');
-    const html = fs.readFileSync(htmlPath, 'utf8');
     if (!html.includes('rel="manifest"')) throw new Error('index.html does not link the manifest');
     if (!html.includes('rel="apple-touch-icon"')) throw new Error('index.html does not link an apple-touch-icon');
-    console.log('✔ Manifest & Icon Presence Check: PASS');
-} catch (err) {
-    console.error('✘ Manifest & Icon Presence Check: FAIL -', err.message);
-    failed = true;
-}
-
-// 7. Topology & keyboard binding consistency check
-try {
-    const html = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
-    // Slider must allow values 0–5
-    if (!html.includes("'shape',    'Morph Topology',  0,   5")) {
-        throw new Error("Topology slider max is not 5");
-    }
-    // Keyboard cases for 5 and 6
-    if (!html.includes("case '5':      morphShapeTo(4)")) {
-        throw new Error("Missing keyboard case for topology 5 (key '5' → morphShapeTo(4))");
-    }
-    if (!html.includes("case '6':      morphShapeTo(5)")) {
-        throw new Error("Missing keyboard case for topology 6 (key '6' → morphShapeTo(5))");
-    }
-    // SHAPE_INFO must have exactly 6 entries (count opening [' sequences)
-    const shapeInfoMatch = html.match(/const SHAPE_INFO = \[([\s\S]*?)\];/);
-    if (!shapeInfoMatch) throw new Error('SHAPE_INFO not found');
-    const entryCount = (shapeInfoMatch[1].match(/\['/g) || []).length;
-    if (entryCount !== 6) throw new Error(`SHAPE_INFO has ${entryCount} entries, expected 6`);
-    // morphShapeTo clamp must be 5
-    if (!html.includes('clamp(target, 0, 5)')) {
-        throw new Error('morphShapeTo clamp is not (0, 5)');
-    }
-    console.log('✔ Topology & keyboard binding consistency (6 topologies): PASS');
-} catch (err) {
-    console.error('✘ Topology consistency check: FAIL -', err.message);
-    failed = true;
-}
+});
 
 if (failed) {
-    console.error('\nSTATIC AUDIT FAILED!');
+    console.error(`\nSTATIC AUDIT FAILED (${failed} check${failed === 1 ? '' : 's'})`);
     process.exit(1);
-} else {
-    console.log('\nALL STATIC AUDIT CHECKS PASSED CLEANLY!');
 }
+console.log('\nALL STATIC AUDIT CHECKS PASSED');

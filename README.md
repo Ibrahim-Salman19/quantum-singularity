@@ -1,169 +1,207 @@
+<div align="center">
+
 # Quantum Singularity
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![WebGL 2](https://img.shields.io/badge/Graphics-WebGL%202-00d9b2.svg)](https://animation-zeta-rosy.vercel.app/)
-[![MediaPipe](https://img.shields.io/badge/Vision-MediaPipe%200.10.35-orange.svg)](https://developers.google.com/mediapipe)
-[![Web Audio](https://img.shields.io/badge/Audio-Web%20Audio%20API-9a4ec4.svg)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
-[![Tests](https://img.shields.io/badge/Playwright-79%20passed-success.svg)](./VALIDATION.md)
-[![LLM Context](https://img.shields.io/badge/AI-llms.txt-blueviolet.svg)](https://animation-zeta-rosy.vercel.app/llms.txt)
+**A particle field you play with your hands.**
 
-**A real-time WebGL 2 particle simulation you control with your hands and your voice — running entirely on-device, from a single static HTML file.**
+Up to 110,000 GPU particles that follow your gestures through the webcam, pulse with your music,<br>
+and drift under your mouse, all computed in the browser and with nothing uploaded.
 
-[**▶ Live Demo**](https://animation-zeta-rosy.vercel.app/) · [Architecture](./ARCHITECTURE.md) · [llms.txt](./llms.txt) · [Pricing & License](./pricing.md) · [Changelog](./CHANGELOG.md) · [Validation Report](./VALIDATION.md) · [MIT License](./LICENSE)
+[**▶ Open the live demo**](https://animation-zeta-rosy.vercel.app/) &nbsp;·&nbsp; [How it works](#how-it-works) &nbsp;·&nbsp; [Architecture](./ARCHITECTURE.md) &nbsp;·&nbsp; [Validation report](./VALIDATION.md)
 
-![Quantum Singularity](./og-image.jpg)
+[![CI](https://github.com/Ibrahim-Salman19/quantum-singularity/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Ibrahim-Salman19/quantum-singularity/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f.svg)](./LICENSE)
+![WebGL 2](https://img.shields.io/badge/WebGL-2-5a6b73.svg)
+![No build step](https://img.shields.io/badge/build-none-5a6b73.svg)
+
+<img src="./docs/media/hero.gif" alt="The particle field morphing from an accretion disk into a Hopf fibration and a 4D tesseract, then back to the disk" width="480">
+
+<sub>720p loop: <a href="./docs/media/hero.mp4">MP4</a> · <a href="./docs/media/hero.webm">WebM</a></sub>
+
+</div>
 
 ---
 
-## What it is
+## Try it in 30 seconds
 
-Up to 110,000 GPU particles arranged into six mathematical topologies (Accretion Disk, Phyllotaxis Lotus, 4D Tesseract, Strange Attractor, Hopf Fibration, Lorenz Manifold), rendered through an HDR bloom pipeline, driven by **three fused real-time input channels**:
+1. **Open the [live demo](https://animation-zeta-rosy.vercel.app/)** and move your mouse (or drag a finger). The field bends toward you.
+2. **Click "Enable hand control"** and raise a hand to the webcam:
 
-| Input | Technology | What it does |
+   | Gesture | Effect |
+   | :--- | :--- |
+   | ☝️ Point | Pull particles toward your fingertip |
+   | ✋ Open palm | Move your hand closer or further to zoom |
+   | ✌️ Victory | Slide sideways to add turbulence |
+
+3. **Click "Enable microphone"** and play some music. Bass swells the field, mids shift its colour, treble roughens it and every beat flashes it.
+4. **Press `1`-`6`** to morph between six mathematical shapes, `F` for a clean full-screen view and `H` for the guide.
+
+Camera and microphone are opt-in. Video and audio are analysed on your device and never leave the browser.
+
+<img src="./docs/media/interface.png" alt="The full interface: control surface on the left, hand-tracking panel on the right, performance readout at the bottom" width="100%">
+
+---
+
+## Highlights
+
+| | |
+| :--- | :--- |
+| **On-device ML, fused with geometry** | MediaPipe's gesture model is blended with a hand-written landmark classifier, weighted by how well the palm faces the camera, then debounced by a time-based state machine. |
+| **Zero CPU particle work** | The particle field has no position buffer. Every position is computed in the vertex shader from a shuffled index, so the CPU uploads nothing per frame. |
+| **Frame-rate independent everywhere** | Smoothing, debouncing and easing run on elapsed seconds, not frame counts, and behave the same at 30 Hz and 144 Hz. This is pinned by tests at 30/60/120/144 Hz. |
+| **Adapts to the device** | GPU and device probing picks a tier at boot (software renderer, integrated or discrete GPU), then pixel ratio and particle count follow the measured frame time. |
+| **Tested like a product** | 137 unit tests (99.8 % line coverage of the logic modules), 91 browser tests in headless Chromium, and an 11-check static audit, all gated in CI. |
+| **Locked-down delivery** | Strict CSP with no `'unsafe-inline'` script, SRI hashes on every CDN module, HSTS and a same-origin camera/microphone policy. A browser test boots the app under the exact production headers. |
+| **No build step** | Native ES modules and an import map. The repository is the deployable site. |
+
+---
+
+## How it works
+
+```mermaid
+flowchart LR
+    subgraph input [Inputs, all on-device]
+        cam[Webcam] --> mp[MediaPipe gesture model<br/>WASM]
+        cam --> geo[Landmark geometry<br/>classifier]
+        mp --> fuse[Quality-weighted<br/>fusion]
+        geo --> fuse
+        fuse --> sm[Temporal state machine<br/>EMA + hysteresis]
+        mic[Microphone] --> fft[FFT] --> dsp[4-band DSP<br/>+ onset detector]
+        mouse[Mouse / touch]
+    end
+    sm --> uni[Shader uniforms]
+    dsp --> uni
+    mouse --> uni
+    uni --> vs[Vertex shader<br/>6 procedural topologies]
+    vs --> bloom[Bloom] --> cine[Cinematic grade<br/>CA, vignette, grain] --> out[sRGB output]
+    tier[Device tier +<br/>frame-time governor] -.-> vs
+    tier -.-> bloom
+```
+
+All three inputs end up as a handful of uniforms on one shader. The CPU's job each frame is to update those uniforms; the GPU computes every particle from scratch.
+
+### Engineering notes
+
+**Positions are never computed on the CPU.** Each particle carries only a shuffled index, a seed and a jet polarity. The vertex shader turns these into a position for the current topology, morph progress, gravity, chaos, hand attractor and audio level. Dropping the usual `N × 3` position buffer removed 1.3 MB of data that was being bound on every draw.
+
+**Quality reductions are invisible.** Every topology maps index to radius monotonically, so trimming the draw range under load used to cut the outer edge off the disk. The index buffer is shuffled once with a seeded Fisher-Yates, which decorrelates buffer order from position: drawing fewer particles now thins the field evenly.
+
+**Gesture recognition fuses two independent signals.** The neural classifier is accurate on canonical poses but knows only a fixed label set. The geometric classifier (joint angles, finger straightness, palm-normal quality) is orientation-invariant and degrades gracefully. They are blended with a weight that tracks how reliably the palm normal can be estimated, then pass through a state machine with separate activate, switch, hold and release thresholds. A one-frame spike cannot trigger a gesture, and a flickering challenger cannot block a release.
+
+**Low frame rates were a real failure mode, found by tests.** On the weakest devices inference drops to 8 Hz, so one sample spans 125 ms, longer than the 85 ms confirmation window. A single misclassified frame after a pause could therefore confirm a gesture on its own. Each sample's contribution is now capped, so confirmation always needs two agreeing samples, and a test pins the behaviour at 8 Hz.
+
+**Audio uses an adaptive noise floor.** Band boundaries (80 / 250 / 2000 / 8000 Hz) are mapped to FFT bins once per stream. Beat detection compares bass energy to a slow running average of itself, so it works on a quiet podcast and a loud track without a sensitivity slider.
+
+**Correctness details that only show up under scrutiny:**
+- **Golden angle.** The phyllotaxis spiral uses the true golden angle, 2.39996 rad. It used to scale 137.5° by τ, a different constant, which produced a subtly wrong spiral.
+- **Film grain.** Grain is applied in gamma-encoded space. Added to linear values, it turned into blocky noise in the shadows after the sRGB encode.
+- **Brightness that scales with the GPU.** Particles blend additively, so a bigger particle budget used to mean more light: the 82K and 110K tiers summed the inner disk to many times display white on half-float targets, and it rendered as a flat white glow. Composer targets are now 8-bit on every tier, and point size shrinks with the square root of the drawn count so screen coverage stays constant. A faster GPU now buys finer detail, not a brighter blur.
+- **Draw-call counter.** `EffectComposer` renders once per pass, and `renderer.info` resets on each render, so the naive draw-call readout showed only the last pass (1 instead of 17). The render loop now owns the reset.
+- **Point size.** Point size comes from the projection matrix and the drawing-buffer height, so perspective scaling tracks the field of view and the window size.
+
+The in-app **Build** panel (`B`) and **Stats** readout (`P`, which shows GPU time and draw calls) present the same material to visitors who never open the source.
+
+---
+
+## Reliability
+
+| Layer | What runs | Where |
 | :--- | :--- | :--- |
-| **Pointer** | Raycast onto a world-space ground plane | Drag an attractor through the field |
-| **Hand gestures** | MediaPipe Tasks Vision, on-device | Point to attract, open palm to control camera distance, Victory to add turbulence |
-| **Live sound** | Web Audio API FFT, on-device | Bass swells the field, treble sharpens turbulence, detected beats fire a visual pulse |
+| **Static audit** | 11 checks: JS syntax, module graph (imports resolve to real exports), unique DOM IDs, every `getElementById` target exists, SRI coverage of every CDN import, strict-CSP hash of the import map, topology bindings, and that every deployed reference exists and is not excluded from the deploy | `npm run test:static` |
+| **Unit** | 137 tests on the pure logic modules (gesture classifier, fusion and state machine, audio DSP, device tiering, share links, maths), with coverage thresholds enforced: 99.8 % lines, 94.6 % branches, 100 % functions | `npm run test:unit` |
+| **Browser** | 91 Playwright specs on headless Chromium with SwiftShader: real camera pipeline with a fake device, shader compilation, an exposure check that fails if the largest tier renders white, modal focus traps, keyboard map, first-run flow, tab-hide teardown, and the full app under the production CSP | `npm run test:e2e` |
 
-Camera and microphone are both strictly opt-in, requested only on an explicit click, and neither stream ever leaves the browser.
+CI runs the audit and unit tests first, then the browser suites in parallel. Writing the unit layer found real bugs, each now pinned by a regression test:
 
-**Press `B` in the live demo** for an in-app summary of the engineering decisions, or `P` for a live GPU-time and draw-call readout.
+- **The 110,000-particle tier was unreachable in every Chromium browser.** Chrome caps `navigator.deviceMemory` at 8, and the tier check required more than 8.
+- **Every Firefox and Safari visitor was classed as low-end.** Those browsers hide `deviceMemory`, and the missing value defaulted to 4 GB.
+- **Every Linux desktop with an Intel or AMD GPU got the lowest tier.** The software-renderer pattern matched "Mesa", the standard Linux driver stack.
+- **At 8 Hz inference, a single misread frame could trigger a gesture.** The fix is described in the engineering notes above.
+- **Shared links without a topology reset the scene to the first shape.** `Number(null)` is 0, which passed the range check.
 
----
-
-## Why it's interesting (engineering notes)
-
-This is a computational-art piece, but the work that went into it is mostly systems work. A few decisions worth calling out:
-
-### Positions are never computed on the CPU
-
-There is no `position` buffer. Every particle's location is derived procedurally inside the vertex shader each frame from its index and a topology function (accretion disk, phyllotaxis lotus, 4D tesseract projection, strange attractor). Dropping the conventional `N × 3` attribute removed 1.3 MB of zeroes that were being uploaded to the GPU and bound on every draw.
-
-Because each topology maps particle index monotonically to radius, an ordered buffer meant that lowering the draw range under load visibly lopped the outer edge off the disk. The index attribute is shuffled once at startup with a seeded Fisher–Yates, which decorrelates buffer order from spatial position — so quality reductions now thin the field uniformly and are essentially invisible.
-
-### Time-based state, not frame-based
-
-A `lerp(current, target, k)` applied once per frame converges twice as fast on a 120 Hz display as on a 60 Hz one, and crawls whenever a loop is throttled. Every easing, debounce, and smoothing path in the app — gesture hysteresis, camera distance, audio band smoothing, onset decay — runs through a frame-rate-independent exponential approach instead, so behaviour is identical at 30 Hz and 144 Hz. The gesture state machine's thresholds are expressed in **seconds**, not frame counts.
-
-### Gesture recognition fuses two independent signals
-
-The neural classifier (MediaPipe's trained `gesture_recognizer.task`) is fast and accurate on canonical poses but only knows a fixed label set. A hand-written geometric classifier — finger joint angles, PIP/DIP straightness, palm-basis normal quality, fingertip separation — is orientation-invariant and degrades gracefully. The two are blended with a **quality-weighted** rule where geometry's weight scales with how reliably the palm normal can be estimated, plus agreement boosts and a `None` veto from either source.
-
-The result runs through a temporal state machine with separate activation / switch / hold / release thresholds, so a gesture can't flicker on a single-frame spike and can't be blocked from releasing by a flickering challenger.
-
-### Audio reactivity is a peer, not a bolt-on
-
-The microphone path mirrors the camera path exactly: explicit permission gate, session-counter guard against stale enable/disable races, named error messaging for every `getUserMedia` failure mode, and full teardown on tab hide, page unload, and bfcache persistence — on tab hide the camera/microphone are fully stopped, and re-acquired on return only if the visitor had them on. FFT bins are mapped to bass/treble Hz ranges once at connection time rather than every frame, and an adaptive onset detector uses a slow running average of bass energy as its noise floor — so beat detection works on a quiet podcast and a loud track alike, without a sensitivity slider.
-
-### The render loop allocates nothing
-
-Gesture ranking, temporal state updates, audio band analysis, and NDC mapping all write into pre-allocated scratch objects rather than returning new ones. DOM writes are change-gated. The result is zero per-frame garbage, so there are no collector pauses to show up as frame-time spikes.
-
-### Quality adapts to the actual device, then to the actual frame time
-
-Particle count, pixel ratio cap, and ML inference rate are tiered at boot from `deviceMemory`, `hardwareConcurrency`, and `saveData`, then adjusted live from measured frame time against a calibrated refresh rate — with a dead zone and cooldown so it settles instead of oscillating. Render targets are reallocated once per quality step, not twice.
-
-### Correctness details that only show up under scrutiny
-
-- **Phyllotaxis**: the golden angle is `2.39996…` radians. The shader was scaling `137.508°` by TAU, which is not the same constant and produced a subtly wrong spiral.
-- **Grain**: additive noise applied to a linear HDR value becomes ±0.15 near black after the sRGB encode in `OutputPass`. Grain is applied in gamma-encoded space so it stays perceptually uniform instead of turning into blocky shadow noise.
-- **Chromatic aberration & vignette**: both operate in aspect-corrected space, so "distance from centre" is a real radial distance rather than a UV-space ellipse stretched on wide displays.
-- **Point size**: derived from `projectionMatrix[1][1]` and the drawing-buffer height, so perspective scaling is physically correct and tracks FOV and window size.
-- **Draw-call profiling**: `EffectComposer` issues one `renderer.render()` per pass and `WebGLRenderer.info` auto-resets on each, so naively reading `info.render.calls` reports the last pass only. The render loop takes ownership of the reset to get an honest per-frame total.
+[VALIDATION.md](./VALIDATION.md) has the details.
 
 ---
 
-## Testing
+## Run it locally
+
+No build step and no runtime dependencies. Any static file server works:
 
 ```bash
-npm install
+git clone https://github.com/Ibrahim-Salman19/quantum-singularity.git
+cd quantum-singularity
+npm start                       # python3 -m http.server 8080 → http://localhost:8080
+```
+
+To run the tests (Node ≥ 22.8):
+
+```bash
+npm ci
 npx playwright install chromium
-npm test        # static audit + full Playwright suite
+npm test                        # static audit + unit tests + browser suite
+npm run test:unit               # fast: logic only, with coverage
 ```
 
-| Suite | Covers |
-| :--- | :--- |
-| `gesture-recognition.spec.ts` | Geometry scoring per pose, score separation, scale invariance, palm-normal quality, malformed input, temporal activation/spike/release, challenger-flicker regression, frame-rate independence, fusion agreement and `None` veto, prototype-pollution resistance, NDC isotropy and mirroring |
-| `audio-reactivity.spec.ts` | Band-bin mapping and clamping, band level extraction, adaptive onset firing and cooldown, idle UI state, full enable/disable round trip |
-| `audio-bands-4.spec.ts` | Four-band DSP: bin boundaries, sub-bass blend, treble-only response, state keys |
-| `engineering-panel.spec.ts` | Modal focus management, `inert` background isolation, mutual exclusion, live stat binding, GPU/draw-call readout and the multi-pass counting regression |
-| `camera-pipeline.spec.ts` | Real camera-on flow headlessly with a fake device: model download and validation, WASM init, toggle round trip |
-| `accessibility.spec.ts` | Keyboard shortcuts, ARIA state, guide overlay |
-| `shader-compile.spec.ts` | GLSL3 post-processing pass compiles with no WebGL program errors — guards the `ShaderPass`/`glslVersion` regression |
-| `topologies.spec.ts` | Hopf/Lorenz topology expansion, keyboard 5/6 + preset buttons, all-6 mapping |
-| `url-state.spec.ts` | Hash serialization, invalid-hash tolerance, clipboard copy, HUD revert |
-| `dom.spec.ts` · `gesture-state.spec.ts` · `webgl.spec.ts` | Interface structure, preset/palette state, WebGL 2 context, FPS HUD, focus mode |
+**Quality override.** Add `?quality=minimal|low|medium|high` to the URL to pin a tier and disable adaptive quality. This is useful on a weak machine, or to see the full 110,000-particle field on a strong one.
 
-The pure maths in both the gesture and audio pipelines is exposed through `window.__qsGesture` and `window.__qsAudio` test surfaces. That's deliberate: those are the only subsystems that can't be driven through the UI without a physical hand in front of a physical camera or real sound in the room. Pushing the side effects to the edges makes the interesting logic verifiable with synthetic landmark poses and synthetic frequency bins.
+**Share a scene.** Press `C` to copy a link that restores the current shape, palette and slider values.
 
-`scripts/static_audit.js` additionally checks ES module syntax, duplicate DOM IDs, `vercel.json` schema and headers, and `robots.txt`.
+<details>
+<summary><b>Project structure</b></summary>
 
----
-
-## Accessibility & resilience
-
-- Full keyboard control (`H` guide, `B` engineering notes, `P` stats, `F` focus mode, `R` reset, `1–4` topologies, `Space` pause, `Esc` dismiss) with modifier keys never hijacked.
-- Modals use a real focus trap with `inert` background isolation and focus restoration.
-- Honours `prefers-reduced-motion` and `prefers-reduced-transparency`.
-- Graceful degradation for: no WebGL 2, WebGL context loss and restore, no `EXT_color_buffer_float` (falls back from HDR to 8-bit targets), no GPU timer extension, CDN failure, offline, denied or missing camera/microphone, and `localStorage` being unavailable.
-
----
-
-## Deployment
-
-Static-only by design — no Vercel Functions, Middleware, Edge Functions, Blob storage, Image Optimization, or server-side AI. WebGL and MediaPipe inference run in the visitor's browser.
-
-Deploy `index.html`, `vercel.json`, `robots.txt`, `sitemap.xml`, `manifest.json`, `og-image.jpg`, and the icon files from the repository root with Vercel's **Other** / static preset. No build command.
-
-Why this shape:
-
-- The app shell is a single HTML file; the favicon is a data URI, avoiding a separate request.
-- Three.js and MediaPipe runtime files are loaded by the browser directly from pinned upstream CDNs rather than proxied, so they never consume Vercel bandwidth. Do **not** rewrite them through a Function — that converts browser-to-CDN traffic into Vercel Fast Data Transfer for no benefit.
-- The 9 import-map modules are pinned with a Subresource Integrity hash in the import map (`sha384`, cross-verified against jsdelivr's published file hashes before use), so a compromised or MITM'd response for an already-allowed origin fails closed instead of executing. The MediaPipe WASM runtime and `.wasm` binary and the `gesture_recognizer.task` model are fetched by MediaPipe's own loader outside the import map, so they can't carry import-map integrity — they come from the same pinned CDN origin, and the model is additionally validated by magic bytes (TFL3/ZIP signature + size floor) and cached with poison eviction.
-- The MediaPipe model is cached in browser `CacheStorage` after first load, with magic-byte validation and poison eviction.
-- Camera permission is requested *before* the ML model downloads, so visitors who decline never pay the download cost.
-- `vercel.json` restricts camera and microphone to the same origin and applies a CSP permitting only the exact external origins in use.
-- `robots.txt` welcomes search engines and AI research crawlers with explicit `llms.txt` and `sitemap.xml` directives.
-- `manifest.json` + a maskable icon set make it installable as a standalone app on mobile and desktop.
-
-Vercel Hobby is intended for personal/non-commercial projects; a portfolio demo fits that intent, and commercial use should move to the appropriate plan.
-
----
-
-## Stack & Performance Benchmarks
-
-| Component | Technology | Performance Metric |
-| :--- | :--- | :--- |
-| **3D Rendering** | Three.js `0.185.1` (pinned SRI), WebGL 2, GLSL 3.0 | 60–144 Hz, <2.5 ms GPU frame time |
-| **Particle Simulation** | Procedural vertex shader (`gl_VertexID`) | 110,000 particles, 0 CPU buffer memory |
-| **Vision Inference** | Google MediaPipe Tasks Vision `0.10.35` (WASM) | ~15 ms on-device latency, 0 cloud egress |
-| **Audio DSP** | Web Audio API (4-band FFT AnalyserNode) | Real-time adaptive noise floor |
-| **Memory Architecture** | Pre-allocated scratch buffers | Exactly 0 bytes/frame GC allocation |
-| **Test Coverage** | Playwright test suite | 79 automated E2E, unit & a11y tests |
-
----
-
-## Machine-Readable Agent Context
-
-For autonomous AI coding assistants, research agents, and LLM search systems:
-- **LLM Summary (`llms.txt`)**: [`https://animation-zeta-rosy.vercel.app/llms.txt`](https://animation-zeta-rosy.vercel.app/llms.txt)
-- **Deep Technical Specification (`llms-full.txt`)**: [`https://animation-zeta-rosy.vercel.app/llms-full.txt`](https://animation-zeta-rosy.vercel.app/llms-full.txt)
-- **Machine-Readable Pricing (`pricing.md`)**: [`https://animation-zeta-rosy.vercel.app/pricing.md`](https://animation-zeta-rosy.vercel.app/pricing.md)
-
----
-
-## Citation
-
-If you use Quantum Singularity as a benchmark, reference architecture, or computational art reference in your research or project, please cite:
-
-```bibtex
-@software{quantum_singularity_2026,
-  author = {Salman, Ibrahim},
-  title = {Quantum Singularity: Real-Time WebGL 2 Particle Simulation with Multi-Modal On-Device Sensor Fusion},
-  url = {https://animation-zeta-rosy.vercel.app/},
-  year = {2026},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/Ibrahim-Salman19/quantum-singularity}}
-}
 ```
+index.html                 markup, import map (SRI-pinned), metadata
+src/
+  main.js                  app wiring: renderer, UI, camera/mic lifecycles, render loop
+  styles.css
+  core/math.js             frame-rate-independent easing, One-Euro filter, seeded LCG
+  core/device-profile.js   GPU/device classification → quality tier and budgets
+  gesture/classifier.js    landmark geometry scoring + neural/geometry fusion
+  gesture/state-machine.js EMA + hysteresis gesture debouncer
+  audio/dsp.js             FFT band mapping, band levels, onset detection
+  state/share-link.js      URL-hash scene serialisation and validation
+  render/shaders/          particle field and cinematic post-processing GLSL
+tests/
+  unit/                    node --test suites for every src/ logic module
+  fixtures/hand-poses.mjs  synthetic 21-landmark hand poses
+  *.spec.ts                Playwright browser suites
+scripts/
+  static_audit.js          pre-test static checks
+  capture-media.mjs        regenerates the README media deterministically
+vercel.json                security headers (CSP, HSTS, Permissions-Policy)
+```
+
+Every module in `src/` except `main.js` is pure, with no DOM access and no Three.js dependency, so the logic that matters is tested directly in Node rather than through a browser.
+</details>
+
+---
+
+## Privacy, security and accessibility
+
+- **Privacy.** Camera and microphone are requested only on an explicit click, the camera before the ML model downloads, so declining costs nothing. Frames and audio are processed locally. Both streams stop when the tab is hidden and resume only if they were on. The app sets no cookies and runs no analytics (the in-app note discloses that the MediaPipe library may send non-image usage metrics).
+- **Network.** Three.js and MediaPipe load from pinned CDN versions, each module checked against a `sha384` hash. The gesture model is downloaded from Google's model storage once, validated by its file signature and cached.
+- **Headers.** A strict Content-Security-Policy (the single inline script, the import map, is allowed by its SHA-256), HSTS, `nosniff`, `X-Frame-Options: DENY` and a Permissions-Policy limiting camera and microphone to this origin.
+- **Accessibility.** Everything is reachable from the keyboard. Modals trap and restore focus with an `inert` background. The app respects `prefers-reduced-motion` and `prefers-reduced-transparency`.
+- **Resilience.** The app degrades gracefully without WebGL 2 or float render targets, or with a GPU timer, a CDN, a camera or `localStorage` missing. It also survives WebGL context loss and restore.
+
+**Requirements:** a browser with WebGL 2 and import maps (any current Chrome, Edge, Firefox or Safari). Hand tracking needs a webcam, and hardware acceleration is strongly recommended. The CI suite runs on Chromium.
+
+---
+
+## Keyboard
+
+| Key | Action | Key | Action |
+| :--- | :--- | :--- | :--- |
+| `1`-`6` | Switch topology | `F` | Focus mode |
+| `H` | Guide | `B` | Build notes |
+| `P` | Performance stats | `C` | Copy share link |
+| `R` | Reset controls | `Space` | Pause |
+| `Esc` | Close panel | | |
+
+---
+
+## License
+
+[MIT](./LICENSE) © Ibrahim Salman. Built with [Three.js](https://threejs.org/) and [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer).
+
+<sub>Machine-readable summaries for AI agents: [`llms.txt`](https://animation-zeta-rosy.vercel.app/llms.txt) · [`llms-full.txt`](https://animation-zeta-rosy.vercel.app/llms-full.txt)</sub>

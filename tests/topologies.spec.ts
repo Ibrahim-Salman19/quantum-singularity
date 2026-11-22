@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Topology expansion — topo4 (Hopf) and topo5 (Lorenz)', () => {
+test.describe('Topology expansion: topo4 (Hopf) and topo5 (Lorenz)', () => {
     test.beforeEach(async ({ page }) => {
         test.setTimeout(120000);
         await page.addInitScript(() => {
@@ -36,7 +36,7 @@ test.describe('Topology expansion — topo4 (Hopf) and topo5 (Lorenz)', () => {
         await expect(page.locator('#info-title')).toContainText('Lorenz', { timeout: 15000 });
     });
 
-    test('morph 4->5 smooth — no crash', async ({ page }) => {
+    test('morph 4->5 smooth, no crash', async ({ page }) => {
         await page.keyboard.press('5');
         await page.waitForTimeout(200);
         await page.keyboard.press('6');
