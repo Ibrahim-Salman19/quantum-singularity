@@ -1,5 +1,5 @@
 /**
- * Quantum Singularity — application entry point.
+ * Quantum Singularity: application entry point.
  *
  * Owns the stateful orchestration: renderer, post-processing chain, UI wiring,
  * camera/microphone lifecycles, adaptive quality and the animation loop. All pure
@@ -7,7 +7,7 @@
  * sibling modules and is unit-tested under Node; see ARCHITECTURE.md.
  */
 import { clamp, clamp01, lerp, smooth01, easeOutExpo, approach, OneEuroFilter, createLcg } from './core/math.js';
-import { computeQualityProfile, parseQualityOverride } from './core/device-profile.js';
+import { computeQualityProfile, parseQualityOverride, pointSizeCompensation } from './core/device-profile.js';
 import { GESTURE_LABELS, geometryGestureScores, mediaPipeGestureScores, fuseGestureScores } from './gesture/classifier.js';
 import { createGestureStateMachine, GESTURE_THRESHOLDS } from './gesture/state-machine.js';
 import { computeAudioBandBins, computeAudioBands, detectAudioOnset } from './audio/dsp.js';
@@ -394,30 +394,26 @@ orbit.maxDistance    = 420;
 orbit.enablePan      = false;
 
 // ═══════════════════════════════════════════
-// 2. HDR POST-PROCESSING PIPELINE
+// 2. POST-PROCESSING PIPELINE
 // ═══════════════════════════════════════════
-// WebGL2 does not guarantee render-to-float support on every GPU. Prefer
-// half-float HDR when a color-buffer float extension is available, otherwise
-// fall back to an 8-bit render target instead of risking an incomplete FBO.
-// On ultra-low tier (software renderer / low-end PC without GPU), use 8-bit targets to conserve VRAM/bandwidth.
+// The composer targets are 8-bit on every tier. Particles blend additively, and
+// their shading is authored for a buffer that saturates at display white: the
+// densest region clips to a bright core while the disk, jets and event horizon
+// around it stay readable. Half-float targets let the same regions sum to many
+// times display white, and ACES plus bloom then washed the whole disk out, on
+// exactly the GPUs that draw the most particles. UnrealBloomPass allocates its
+// own half-float mip chain, so the blur itself keeps float precision.
 const gl = renderer.getContext();
-const supportsHDRColorBuffer = Boolean(
-    !ultraLowTier && (
-        gl.getExtension('EXT_color_buffer_float') ||
-        gl.getExtension('EXT_color_buffer_half_float')
-    )
-);
-const renderTargetType = supportsHDRColorBuffer ? THREE.HalfFloatType : THREE.UnsignedByteType;
 // HUD quality readout: "AUTO" while the adaptive loop is steering, or the pinned
 // tier name when ?quality= locked it.
-const hudModeLabel = () => `${adaptiveQualityLocked ? `${qualityProfile.tier.toUpperCase()} LOCKED` : 'AUTO'} Q${Math.round(adaptiveScale * 100)} / ${supportsHDRColorBuffer ? 'HDR' : 'SDR'}`;
+const hudModeLabel = () => `${adaptiveQualityLocked ? `${qualityProfile.tier.toUpperCase()} LOCKED` : 'AUTO'} Q${Math.round(adaptiveScale * 100)}`;
 
-const hdrTarget = new THREE.WebGLRenderTarget(1, 1, {
-    type: renderTargetType,
+const sceneTarget = new THREE.WebGLRenderTarget(1, 1, {
+    type: THREE.UnsignedByteType,
     depthBuffer: false,
     stencilBuffer: false
 });
-const composer = new EffectComposer(renderer, hdrTarget);
+const composer = new EffectComposer(renderer, sceneTarget);
 composer.setPixelRatio(effectiveDPR());
 composer.setSize(innerWidth, innerHeight);
 const renderPass = new RenderPass(scene, camera);
@@ -532,6 +528,8 @@ const partMat = new THREE.ShaderMaterial({
         uPaletteNext:{ value: 0 },
         uPaletteMix: { value: 0 },
         uPSize:      { value: 2.25 },
+        // Shrinks points as the drawn count grows, so coverage stays constant (see device-profile.js).
+        uCoverage:   { value: pointSizeCompensation(geo.drawRange.count) },
         uPixel:      { value: effectiveDPR() },
         // Drawing-buffer height in device pixels; feeds the perspective point-size term.
         uViewportHeight: { value: Math.max(1, innerHeight * effectiveDPR()) },
@@ -675,7 +673,7 @@ mkSlider('cg-bloom',   'bloom',    'Bloom Intensity', 0.0, 2.5,  INITIAL_BLOOM);
 
 // ── URL hash state: read once at startup ───────────────────────────────────────
 // Parsing and validation live in src/state/share-link.js. history.replaceState is
-// not called here — the hash is only written on demand by the C key, so the
+// not called here; the hash is only written on demand by the C key, so the
 // animate loop stays free of DOM mutations.
 (function applyHashState() {
     const { sliders, palette, topology } = parseShareHash(location.hash);
@@ -769,7 +767,7 @@ function setInfo(idx) {
     _infoCache = key;
     const titleEl = document.getElementById('info-title');
     const descEl  = document.getElementById('info-desc');
-    // Fade out, swap text, fade back in — collapses to an instant swap when
+    // Fade out, swap text, fade back in; collapses to an instant swap when
     // prefers-reduced-motion is active (transition-duration is .01ms there).
     if (_infoFadeTimer) { clearTimeout(_infoFadeTimer); _infoFadeTimer = null; }
     titleEl.classList.add('info-fading');
@@ -865,7 +863,7 @@ renderer.domElement.addEventListener('dblclick', () => {
 });
 
 // ═══════════════════════════════════════════
-// 6–7. GESTURE FUSION + TEMPORAL HYSTERESIS
+// 6-7. GESTURE FUSION + TEMPORAL HYSTERESIS
 // ═══════════════════════════════════════════
 // The classifier (geometry + MediaPipe fusion) and the hysteresis state machine
 // are pure modules under src/gesture/. This section only binds them to the DOM.
@@ -1834,7 +1832,7 @@ window.addEventListener('keydown', (e) => {
         case 'c': {
             // Serialize current simulation state to a shareable URL hash and copy
             // it to the clipboard. history.replaceState is intentionally NOT called
-            // here — driving it at 60Hz would create per-frame layout thrash.
+            // here: driving it at 60Hz would create per-frame layout thrash.
             const url = `${location.origin}${location.pathname}#${serializeShareState(uiV)}`;
             navigator.clipboard?.writeText(url).catch(() => {});
             // Brief confirmation flash in the HUD mode display.
@@ -1885,7 +1883,7 @@ window.addEventListener('keydown', (e) => {
                 } catch (err) {
                     console.warn('[Snapshot]', err);
                 } finally {
-                    // Dispose immediately — preserveDrawingBuffer ties up extra
+                    // Dispose immediately: preserveDrawingBuffer ties up extra
                     // GPU memory and we only needed one frame from this renderer.
                     try { snapRenderer?.dispose(); } catch (_) {}
                 }
@@ -2062,6 +2060,7 @@ function applyRenderScale(nextScale, force = false) {
     const minParticles = ultraLowTier ? 8000 : (lowTier ? 12000 : 16000);
     const activeParticles = Math.max(minParticles, Math.floor(N * particleRatio));
     geo.setDrawRange(0, activeParticles);
+    partMat.uniforms.uCoverage.value = pointSizeCompensation(activeParticles);
     sgeo.setDrawRange(0, Math.max(200, Math.floor(SN * starRatio)));
     currentInferenceFPS = Math.round(lerp(isMobile ? (ultraLowTier ? 8 : 11) : (ultraLowTier ? 9 : 13), INFERENCE_FPS_CAP, detail));
     if (neuralBackend === 'main') currentInferenceFPS = Math.min(currentInferenceFPS, isMobile ? 10 : 14);

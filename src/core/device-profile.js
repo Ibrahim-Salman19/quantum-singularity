@@ -90,6 +90,30 @@ const BUDGETS = Object.freeze({
 });
 
 /**
+ * The particle count the shading was tuned at: the minimal desktop budget.
+ */
+export const COVERAGE_REFERENCE_PARTICLES = 28000;
+
+/**
+ * Point-size factor that keeps the field's screen coverage independent of the tier.
+ *
+ * Particles blend additively, so how much of the disk saturates grows with
+ * count x point area. At the shading's tuned size, 110K particles covered the
+ * inner disk several times over and it rendered as flat white. Scaling the point
+ * diameter by sqrt(reference / count) holds count x area constant, so a bigger
+ * budget buys finer detail instead of more light. Counts at or below the
+ * reference are drawn as authored.
+ *
+ * @param {number} visibleCount particles currently drawn
+ * @returns {number} factor in (0, 1]
+ */
+export function pointSizeCompensation(visibleCount, reference = COVERAGE_REFERENCE_PARTICLES) {
+    const n = Number(visibleCount);
+    if (!Number.isFinite(n) || n <= reference) return 1;
+    return Math.sqrt(reference / n);
+}
+
+/**
  * Parse a `?quality=` override. Accepts tier names plus a few friendly aliases.
  * @returns {'minimal'|'low'|'medium'|'high'|null}
  */

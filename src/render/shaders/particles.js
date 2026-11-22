@@ -18,7 +18,7 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */`
 
     uniform float uTime, uShape, uScale, uGravity, uJetPower, uChaos, uSpeed;
     uniform int   uPalette, uPaletteNext;
-    uniform float uPaletteMix, uPSize, uPixel, uTotalCount, uHandInfl, uViewportHeight;
+    uniform float uPaletteMix, uPSize, uCoverage, uPixel, uTotalCount, uHandInfl, uViewportHeight;
     uniform vec3  uHandPos;
     // Live microphone bands (0..1, smoothed on the CPU) -- a third input channel
     // alongside pointer/hand attraction. Bass swells the whole field radially,
@@ -90,11 +90,11 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */`
                     rC*cos(tC)+sin(tC*11.+t*2.)*(ch*3.));
     }
 
-    // topo4: Hopf Fibration — stereographic projection of S³ onto R³.
+    // topo4: Hopf Fibration: stereographic projection of S³ onto R³.
     // Each particle traces one fibre of the Hopf bundle π: S³ → S². The fibre
     // through the point (η,ξ) on S² is a great circle on S³; stereographic
     // projection maps it to a circle in R³. Nearby fibres on S² produce linked
-    // circles in R³ that never intersect — the global result is a nested toroidal
+    // circles in R³ that never intersect; the global result is a nested toroidal
     // weave filling all of space. The slowly-breathing η parameter makes the
     // whole structure pulse gently rather than standing rigid.
     vec3 topo4(float nI, float t, float scl, float ch) {
@@ -118,9 +118,9 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */`
         return p;
     }
 
-    // topo5: Lorenz manifold surface — closed-form butterfly parametrization.
+    // topo5: Lorenz manifold surface: closed-form butterfly parametrization.
     // A live Lorenz integrator (σ=10, ρ=28, β=8/3) would need ~1000 RK4 steps
-    // per particle per frame — GPU-impossible in a vertex shader. Instead we
+    // per particle per frame, which is infeasible in a vertex shader. Instead we
     // parametrize the two Lorenz wings as ruled spiral surfaces whose shape
     // matches the qualitative butterfly geometry: each wing is a rolled spiral
     // in (r,ψ) that collapses onto its fixed-point locus, and the two wings are
@@ -171,24 +171,33 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */`
         vec3 p0 = vec3(0.0), p1 = vec3(0.0);
         float isJet = 0.0, dW = 1.0;
 
+        // Framing. topo1..topo5 are authored with a 90th-percentile radius of
+        // 16 to 25 units, against 144 for the disk and a visible half-height of
+        // about 85 at the default camera. Unscaled, each filled a few percent of
+        // the frame and its particles piled into a white smudge. Scaling the
+        // output (not the scale argument, which also sets the curl frequencies)
+        // keeps every shape's geometry and brings its 90th-percentile radius to
+        // about 48 units at the default scale.
+        const float FIT1 = 3.0, FIT2 = 2.9, FIT3 = 2.8, FIT4 = 3.0, FIT5 = 1.95;
+
         if (sfF < 1.0) {
             vec4 r = topo0(nI, t, uScale, uGravity, uJetPower, uChaos);
             p0 = r.xyz; isJet = r.w; dW = 1.0 - isJet;
-            if (sfFrac > 0.0002) p1 = topo1(nI, t, uScale, uChaos);
+            if (sfFrac > 0.0002) p1 = topo1(nI, t, uScale, uChaos) * FIT1;
         } else if (sfF < 2.0) {
-            p0 = topo1(nI, t, uScale, uChaos);
-            if (sfFrac > 0.0002) p1 = topo2(nI, t, uScale, uChaos);
+            p0 = topo1(nI, t, uScale, uChaos) * FIT1;
+            if (sfFrac > 0.0002) p1 = topo2(nI, t, uScale, uChaos) * FIT2;
         } else if (sfF < 3.0) {
-            p0 = topo2(nI, t, uScale, uChaos);
-            if (sfFrac > 0.0002) p1 = topo3(nI, t, uScale, uChaos);
+            p0 = topo2(nI, t, uScale, uChaos) * FIT2;
+            if (sfFrac > 0.0002) p1 = topo3(nI, t, uScale, uChaos) * FIT3;
         } else if (sfF < 4.0) {
-            p0 = topo3(nI, t, uScale, uChaos);
-            if (sfFrac > 0.0002) p1 = topo4(nI, t, uScale, uChaos);
+            p0 = topo3(nI, t, uScale, uChaos) * FIT3;
+            if (sfFrac > 0.0002) p1 = topo4(nI, t, uScale, uChaos) * FIT4;
         } else if (sfF < 5.0) {
-            p0 = topo4(nI, t, uScale, uChaos);
-            if (sfFrac > 0.0002) p1 = topo5(nI, t, uScale, uChaos);
+            p0 = topo4(nI, t, uScale, uChaos) * FIT4;
+            if (sfFrac > 0.0002) p1 = topo5(nI, t, uScale, uChaos) * FIT5;
         } else {
-            p0 = topo5(nI, t, uScale, uChaos);
+            p0 = topo5(nI, t, uScale, uChaos) * FIT5;
         }
 
         vec3 pos = mix(p0, p1, sfFrac);
@@ -218,7 +227,7 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */`
         if (uPaletteMix > 0.001) {
             vColor = mix(vColor, colorize(uPaletteNext, nd, nI, t, isJet, dW), uPaletteMix);
         }
-        // Mid-band (250–2000 Hz) hue shift: a perceptual luma-preserving rotation
+        // Mid-band (250-2000 Hz) hue shift: a perceptual luma-preserving rotation
         // in hue space. dot(vColor, luma) converts to approximate perceptual
         // luminance; fract keeps the hue angle in [0,1]. This runs only when audio
         // mid is active, so steady-state (audio off) has zero extra ALU cost.
@@ -234,7 +243,7 @@ export const PARTICLE_VERTEX_SHADER = /* glsl */`
         // projectionMatrix[1][1] == 1/tan(fov/2); combined with viewport height this
         // gives a physically correct perspective size that tracks FOV and window size.
         float psScale = projectionMatrix[1][1] * uViewportHeight * 0.32;
-        gl_PointSize = clamp(vEnergy * uPSize * (psScale / max(-mv.z, 1.0)), 0.6 * uPixel, 42.0 * uPixel);
+        gl_PointSize = clamp(vEnergy * uPSize * uCoverage * (psScale / max(-mv.z, 1.0)), 0.6 * uPixel, 42.0 * uPixel);
         gl_Position  = projectionMatrix * mv;
     }
 `;

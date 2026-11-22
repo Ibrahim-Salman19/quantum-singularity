@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyGPU, pickTier, computeQualityProfile, parseQualityOverride, QUALITY_TIERS } from '../../src/core/device-profile.js';
+import { classifyGPU, pickTier, computeQualityProfile, parseQualityOverride, pointSizeCompensation, COVERAGE_REFERENCE_PARTICLES, QUALITY_TIERS } from '../../src/core/device-profile.js';
 
 describe('classifyGPU', () => {
     // Real renderer strings as reported by Chrome/ANGLE, Firefox, Safari and Mesa.
@@ -170,6 +170,39 @@ describe('parseQualityOverride', () => {
     test('rejects anything else', () => {
         for (const s of ['', '?quality=', '?quality=extreme', '?q=high', undefined, null]) {
             assert.equal(parseQualityOverride(s), null);
+        }
+    });
+});
+
+describe('pointSizeCompensation', () => {
+    test('leaves counts at or below the reference as authored', () => {
+        for (const n of [1, 8000, 18000, COVERAGE_REFERENCE_PARTICLES]) {
+            assert.equal(pointSizeCompensation(n), 1);
+        }
+    });
+
+    test('REGRESSION: holds count x point area constant above the reference', () => {
+        // Without this, every tier above minimal saturated the inner disk to white.
+        for (const tier of ['low', 'medium', 'high']) {
+            const n = computeQualityProfile({ deviceMemory: 8, cores: 16, override: tier }).particleCount;
+            const f = pointSizeCompensation(n);
+            assert.ok(f < 1, tier);
+            assert.ok(Math.abs(n * f * f - COVERAGE_REFERENCE_PARTICLES) < 1e-6, tier);
+        }
+    });
+
+    test('shrinks monotonically as the count grows', () => {
+        let prev = 1;
+        for (const n of [30000, 48000, 82000, 110000, 400000]) {
+            const f = pointSizeCompensation(n);
+            assert.ok(f < prev, String(n));
+            prev = f;
+        }
+    });
+
+    test('treats invalid counts as the authored size', () => {
+        for (const n of [NaN, undefined, null, 'many', Infinity, -Infinity]) {
+            assert.equal(pointSizeCompensation(n), 1, String(n));
         }
     });
 });
