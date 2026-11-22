@@ -17,3 +17,12 @@ lighthouse-report.report.*
 C:*/
 .claude/
 
+
+# Local browser-automation artifacts
+.playwright-mcp/
+
+# Local AI-assistant tooling (skills, MCP config) -- personal workflow, not project source
+.agents/
+agent/
+skills-lock.json
+config/mcporter.json
