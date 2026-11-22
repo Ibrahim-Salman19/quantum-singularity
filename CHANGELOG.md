@@ -1,5 +1,17 @@
 # Quantum Singularity - Changelog
 
+## [Unreleased]
+
+### Changed
+- **Live address**: the site moved to https://quantumsingularity.vercel.app/.
+
+### Fixed
+- **Slow hand tracking without a GPU**: on a software renderer (SwiftShader, llvmpipe, Microsoft Basic Render Driver), the MediaPipe "GPU" delegate is emulated on the CPU. Under SwiftShader its first inference took 24 s and later ones 2.6 s, against 5.7 s and 1.2 s for the CPU delegate. The recognizer now uses the CPU delegate there. A real GPU still tries the GPU delegate first.
+- **Permissions-Policy warning**: `bluetooth` is not a policy-controlled feature in Chromium, which logged a warning on every page load.
+
+### Added
+- **End-to-end hand test**: the fake camera shows a photo of a V sign, and the test requires a confirmed VICTORY. The camera test before it only checked the no-hand state.
+
 ## [6.0.0] - 2026-11-22 (Modular Architecture, Unit-Tested Core, Strict CSP)
 
 ### Changed

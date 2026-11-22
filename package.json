@@ -36,7 +36,7 @@
     "test:unit": "node --test --experimental-test-coverage --test-coverage-include=src/** --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=95 tests/unit/*.test.js",
     "test:e2e": "npx playwright test",
     "test:fast": "npx playwright test tests/gesture-recognition.spec.ts tests/gesture-state.spec.ts tests/dom.spec.ts tests/accessibility.spec.ts tests/topologies.spec.ts tests/url-state.spec.ts tests/onboarding.spec.ts",
-    "test:gpu": "npx playwright test tests/engineering-panel.spec.ts tests/webgl.spec.ts tests/shader-compile.spec.ts tests/camera-pipeline.spec.ts tests/visibility-suspend.spec.ts tests/audio-reactivity.spec.ts tests/audio-bands-4.spec.ts tests/csp.spec.ts tests/exposure.spec.ts",
+    "test:gpu": "npx playwright test tests/engineering-panel.spec.ts tests/webgl.spec.ts tests/shader-compile.spec.ts tests/camera-pipeline.spec.ts tests/visibility-suspend.spec.ts tests/audio-reactivity.spec.ts tests/audio-bands-4.spec.ts tests/csp.spec.ts tests/exposure.spec.ts tests/hand-gesture.spec.ts",
     "test:ci": "npm run test:static && npm run test:unit && npm run test:fast && npm run test:gpu"
   },
   "devDependencies": {
