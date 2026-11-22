@@ -1287,20 +1287,23 @@ async function initializeMainThreadBackend() {
     // MediaPipe may take ownership of (and detach) the buffer it is handed, so each
     // delegate attempt gets its own copy. Reusing one array meant the CPU fallback
     // could receive a detached buffer and fail on exactly the machines that need it.
-    try {
-        mainRecognizer = await GestureRecognizer.createFromOptions(vision, {
-            ...common, baseOptions: { modelAssetBuffer: model.slice(), delegate: 'GPU' }
-        });
-        setBackendBadge('on-device · GPU');
-    } catch (gpuError) {
-        console.warn('[NeuralLink] GPU delegate unavailable, falling back to CPU', gpuError);
-        try { mainRecognizer?.close?.(); } catch (_) {}
-        mainRecognizer = null;
-        mainRecognizer = await GestureRecognizer.createFromOptions(vision, {
-            ...common, baseOptions: { modelAssetBuffer: model.slice(), delegate: 'CPU' }
-        });
-        setBackendBadge('on-device · CPU');
+    // A software renderer skips the GPU delegate (see visionDelegates).
+    let lastError = null;
+    for (const delegate of qualityProfile.visionDelegates) {
+        try {
+            mainRecognizer = await GestureRecognizer.createFromOptions(vision, {
+                ...common, baseOptions: { modelAssetBuffer: model.slice(), delegate }
+            });
+            setBackendBadge(`on-device · ${delegate}`);
+            break;
+        } catch (error) {
+            lastError = error;
+            console.warn(`[NeuralLink] ${delegate} delegate unavailable`, error);
+            try { mainRecognizer?.close?.(); } catch (_) {}
+            mainRecognizer = null;
+        }
     }
+    if (!mainRecognizer) throw lastError;
     neuralBackend = 'main';
     mainInferenceErrors = 0;
     currentInferenceFPS = Math.min(baselineInferenceFPS, isMobile ? 12 : 15);

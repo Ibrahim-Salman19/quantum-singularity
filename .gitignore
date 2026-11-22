@@ -26,3 +26,6 @@ C:*/
 agent/
 skills-lock.json
 config/mcporter.json
+
+# Downloaded by tests/global-setup.mjs
+tests/fixtures/*.mjpeg

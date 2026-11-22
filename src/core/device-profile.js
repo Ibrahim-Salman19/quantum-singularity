@@ -170,6 +170,11 @@ export function computeQualityProfile({ rendererName = '', deviceMemory, cores, 
         initialBloom: ultraLowTier ? 0.28 : lowTier ? 0.38 : 0.45,
         // Fraction of the allocated particles/stars drawn at start-up.
         initialParticleFraction: lite ? 0.72 : 1.0,
-        initialStarFraction: lite ? 0.65 : 1.0
+        initialStarFraction: lite ? 0.65 : 1.0,
+        // MediaPipe delegates to try, in order. On a CPU rasteriser the "GPU"
+        // delegate is emulated as well: under SwiftShader its first inference took
+        // 24 s and each later one about twice as long as the CPU delegate's, so it
+        // is not offered there. It follows the hardware, not a forced ?quality tier.
+        visionDelegates: Object.freeze(gpuClass === 'software' ? ['CPU'] : ['GPU', 'CPU'])
     });
 }

@@ -112,6 +112,17 @@ describe('computeQualityProfile', () => {
         assert.equal(p.targetFps, 50);
         assert.equal(p.baselineInferenceFps, 12);
         assert.equal(p.initialBloom, 0.28);
+        assert.deepEqual(p.visionDelegates, ['CPU']);
+    });
+
+    test('gesture inference tries the GPU delegate first unless the renderer is software', () => {
+        const delegates = (rendererName, override = null) => computeQualityProfile({ ...desktop, rendererName, override }).visionDelegates;
+        assert.deepEqual(delegates('ANGLE (NVIDIA, NVIDIA GeForce RTX 4080 Direct3D11 vs_5_0 ps_5_0, D3D11)'), ['GPU', 'CPU']);
+        assert.deepEqual(delegates('ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11 vs_5_0 ps_5_0, D3D11)'), ['GPU', 'CPU']);
+        assert.deepEqual(delegates(''), ['GPU', 'CPU']);
+        assert.deepEqual(delegates('ANGLE (Microsoft, Microsoft Basic Render Driver Direct3D11 vs_5_0 ps_5_0, D3D11)'), ['CPU']);
+        // A forced tier changes the render budget, not what the hardware can run.
+        assert.deepEqual(delegates('llvmpipe (LLVM 15.0.7, 256 bits)', 'high'), ['CPU']);
     });
 
     test('an override pins the tier and is reported as forced', () => {
