@@ -4,10 +4,12 @@ import { test, expect } from '@playwright/test';
 // lands on the inner disk. Before 6.0.0 every tier above minimal summed it far
 // past display white, and the default scene rendered as a flat white glow on
 // exactly the hardware that should show it best. This renders the largest tier
-// on a fixed simulated clock and fails if the frame is blown out.
+// at a fixed simulated moment and fails if the frame is blown out.
 //
-// The clock is Playwright's fake one, so the frame is taken at the same
-// simulated moment however slowly the software rasteriser runs.
+// The clock is Playwright's fake one, paused once the app is ready: an installed
+// clock otherwise keeps running in real time and the rasteriser's speed would
+// decide how many frames are drawn. Paused, the frame is taken at the same
+// simulated moment on every machine.
 test.use({ viewport: { width: 640, height: 360 } });
 
 const FPS = 24;
@@ -29,6 +31,7 @@ test('the high tier renders a structured field, not a white-out', async ({ page 
   await expect
     .poll(() => page.evaluate(() => (window as any).__qsReady === true), { timeout: 60000 })
     .toBe(true);
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 100));
 
   for (let i = 0; i < SIMULATED_SECONDS * FPS; i++) {
     await page.clock.fastForward(1000 / FPS);

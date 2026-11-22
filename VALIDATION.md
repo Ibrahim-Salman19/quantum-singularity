@@ -78,7 +78,7 @@ Unit coverage measures the DOM-free modules. `src/main.js` (renderer, UI and dev
 | `visibility-suspend.spec.ts` | 2 | render-loop suspension and camera/microphone teardown on tab hide |
 | `shader-compile.spec.ts` | 1 | every shader compiles and links under WebGL 2 |
 | `csp.spec.ts` | 1 | the app boots under the exact production headers with zero `securitypolicyviolation` events |
-| `exposure.spec.ts` | 1 | the 110K-particle tier, rendered on a fixed simulated clock, has under 15 % near-white pixels and over 30 % dark ones |
+| `exposure.spec.ts` | 1 | the 110K-particle tier, rendered at a fixed simulated moment, has under 15 % near-white pixels and over 30 % dark ones |
 
 **Refactor parity.** The full suite was run on the original single-file app (`ae65666`) and on this branch on the same machine:
 - Original: 83 / 83 passed, 24.8 min.
@@ -88,12 +88,12 @@ The seven new tests are the onboarding and CSP specs.
 
 **Negative control.** To check that `csp.spec.ts` can fail, one character of the import-map hash in `vercel.json` was corrupted. The test then failed with a `script-src` violation, as it should.
 
-`exposure.spec.ts` was run against the code before the fix and after it, on the same machine and the same simulated clock:
+`exposure.spec.ts` was run twice against the code before the fix (commit `2949b36`) and twice after it, on the same machine with the clock paused at the same simulated moment. Both runs of each build agreed to within 0.2 percentage points:
 
 | Build | Near-white pixels | Dark pixels | Mean luminance | Result |
 | :--- | ---: | ---: | ---: | :--- |
-| Before (half-float targets, fixed point size) | 44.5 % | 2.4 % | 0.80 | fails |
-| After (8-bit targets, coverage-scaled points) | 0.0 % | 49.6 % | 0.29 | passes |
+| Before (half-float targets, fixed point size) | 44.3 % | 2.4 % | 0.80 | fails |
+| After (8-bit targets, coverage-scaled points) | 0.0 % | 49.9 % | 0.29 | passes |
 
 ---
 
