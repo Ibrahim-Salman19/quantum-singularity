@@ -62,6 +62,6 @@ test.describe('First-run onboarding', () => {
 
   test('the guide lists every topology shortcut', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#guide-overlay .shortcut-row')).toContainText('1–6');
+    await expect(page.locator('#guide-overlay .shortcut-row')).toContainText('1-6');
   });
 });

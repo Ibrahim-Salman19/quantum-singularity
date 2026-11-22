@@ -21,7 +21,7 @@ C:*/
 # Local browser-automation artifacts
 .playwright-mcp/
 
-# Local AI-assistant tooling (skills, MCP config) -- personal workflow, not project source
+# Personal editor and tooling configuration, not project source
 .agents/
 agent/
 skills-lock.json

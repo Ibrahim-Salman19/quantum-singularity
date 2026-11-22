@@ -42,7 +42,7 @@ test.describe('Four-band audio DSP', () => {
             return out;
         });
         expect(result.subBassRaw).toBeGreaterThan(0);
-        // bassRaw is a 0.55/0.45 blend — must be positive when sub-bass is active
+        // bassRaw is a 0.55/0.45 blend, so it must be positive when sub-bass is active
         expect(result.bassRaw).toBeGreaterThan(0);
         // Treble bins are all zero
         expect(result.trebleRaw).toBe(0);

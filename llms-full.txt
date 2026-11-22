@@ -1,140 +1,135 @@
-# Quantum Singularity — Comprehensive Technical & Architectural Specification
+# Quantum Singularity: Technical Specification
 
-> Complete reference for autonomous AI agents, LLM search engines, and systems engineers analyzing Quantum Singularity.
+> Reference for AI agents, search systems and engineers. Every constant below is taken from the source.
 > Canonical URL: https://animation-zeta-rosy.vercel.app/
 > Repository: https://github.com/Ibrahim-Salman19/quantum-singularity
-> License: MIT License (100% Free & Open Source)
+> License: MIT
 
 ---
 
-## 1. Executive Overview
+## 1. Overview
 
-Quantum Singularity is a production-grade WebGL 2 particle simulation rendering up to 110,000 real-time particles running at 60–144 Hz. It is controlled via three fused sensory channels:
-1. **Pointer Coordinates**: Raycast onto a world-space ground plane with spring damping.
-2. **On-Device Hand Gestures**: MediaPipe Tasks Vision running locally in WebAssembly/WebGL, fused with an orientation-invariant geometric landmark classifier.
-3. **Real-Time Microphone Sound**: Web Audio API FFT spectrum decomposed into a 4-band psychoacoustic DSP pipeline with continuous adaptive noise-floor calibration.
+Quantum Singularity renders up to 110,000 particles in WebGL 2 and lets visitors steer them with three input channels that run entirely in the browser:
 
-The entire system is contained within a single static HTML file with zero build step, zero backend servers, zero runtime npm packages, and zero client-side per-frame memory allocation.
+1. **Pointer**: mouse or touch, raycast onto a camera-facing interaction plane, acting as an attractor.
+2. **Hand gestures**: MediaPipe Tasks Vision (WASM) fused with a hand-written landmark-geometry classifier.
+3. **Microphone**: Web Audio FFT split into four bands plus an adaptive onset detector.
 
----
-
-## 2. Mathematical Topologies & Vertex Shader Formulations
-
-In Quantum Singularity, particle positions are calculated procedurally in the vertex shader from the integer vertex index `gl_VertexID` ($i \in [0, N-1]$). No CPU position buffer is ever allocated or bound.
-
-### 2.1 Accretion Disk
-Simulates matter orbiting a central gravitational singularity:
-$$\theta = 2\pi \cdot \text{fract}(i \cdot \phi) + \omega(r) \cdot t$$
-$$r = r_{\text{min}} + (r_{\text{max}} - r_{\text{min}}) \cdot \sqrt{\frac{i}{N}}$$
-$$\omega(r) = \frac{k}{\sqrt{r^3}} \quad (\text{Keplerian orbital velocity})$$
-$$z = \sigma_z(r) \cdot \sin(m\theta + \nu t)$$
-
-### 2.2 Phyllotaxis Lotus
-Vogel's generative model of botanical spiral packing using the exact golden angle:
-$$\theta_{\text{golden}} = 137.50776405^\circ = 2.399963229728653\text{ rad}$$
-$$\theta_i = i \cdot \theta_{\text{golden}}$$
-$$r_i = c \cdot \sqrt{i}$$
-$$z_i = h \cdot \left(\frac{r_i}{r_{\text{max}}}\right)^2 \cdot \cos(k \theta_i - \omega t)$$
-
-### 2.3 4D Tesseract Projection
-Particles distributed along the vertices and edges of a 4-dimensional hypercube $[-1, 1]^4$, rotated simultaneously in the $XW$ and $YZ$ planes:
-$$R_{XW}(\alpha) = \begin{pmatrix} \cos\alpha & 0 & 0 & -\sin\alpha \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ \sin\alpha & 0 & 0 & \cos\alpha \end{pmatrix}, \quad R_{YZ}(\beta) = \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & \cos\beta & -\sin\beta & 0 \\ 0 & \sin\beta & \cos\beta & 0 \\ 0 & 0 & 0 & 1 \end{pmatrix}$$
-$$\mathbf{P}_{4D}' = R_{XW}(\alpha) R_{YZ}(\beta) \mathbf{P}_{4D}$$
-$$\mathbf{P}_{3D} = \frac{d}{d - w'} \begin{pmatrix} x' \\ y' \\ z' \end{pmatrix} \quad (d = \text{camera 4D distance})$$
-
-### 2.4 Clifford Strange Attractor
-Non-linear discrete dynamical system generating fractal chaotic trajectories:
-$$x_{n+1} = \sin(a y_n) + c \cos(a x_n)$$
-$$y_{n+1} = \sin(b x_n) + d \cos(b y_n)$$
-$$z_{n+1} = \sin(x_n y_n + t)$$
-Parameters modulated in real time by audio frequency harmonics ($a=1.7, b=1.8, c=1.9, d=0.8$).
-
-### 2.5 Hopf Fibration
-Geometric representation of the 3-sphere $S^3$ mapped onto the 2-sphere $S^2$ as nested Villarceau circles:
-Given coordinates $(\eta, \xi_1, \xi_2)$ where $\eta \in [0, \pi/2]$:
-$$z_0 = \cos\eta \cdot e^{i\xi_1}, \quad z_1 = \sin\eta \cdot e^{i\xi_2}$$
-$$(x, y, z) = \left(2\text{Re}(z_0 \bar{z}_1), 2\text{Im}(z_0 \bar{z}_1), |z_0|^2 - |z_1|^2\right)$$
-Projected stereographically onto $\mathbb{R}^3$, producing interconnected nested particle rings.
-
-### 2.6 Lorenz Manifold
-Non-linear chaotic atmospheric convection differential system:
-$$\frac{dx}{dt} = \sigma (y - x), \quad \frac{dy}{dt} = x (\rho - z) - y, \quad \frac{dz}{dt} = x y - \beta z$$
-Parameters: $\sigma = 10$, $\rho = 28$, $\beta = 8/3$. Integrated in parallel via vertex shader parameterization.
+It is a static site of native ES modules (`index.html` + `src/`) with an import map and no build step. There is no backend. External requests are limited to pinned CDN modules (Three.js, MediaPipe), the MediaPipe WASM runtime, the gesture model (downloaded once from Google model storage after the visitor grants camera access, then cached) and Google Fonts.
 
 ---
 
-## 3. Sensor Fusion & Multi-Modal Input Architecture
+## 2. Source layout
 
-### 3.1 Dual-Engine Gesture Classification
-1. **Neural Classifier**: MediaPipe Tasks Vision (`gesture_recognizer.task`) running on a background WASM/WebGL pipeline. High precision on canonical frontal poses.
-2. **Geometric Classifier**: Pure mathematical analysis of 21 3D hand landmarks:
-   - Joint flexion angles: $\theta_{PIP} = \arccos\left(\frac{\mathbf{v}_{MCP \to PIP} \cdot \mathbf{v}_{PIP \to DIP}}{\|\mathbf{v}_{MCP \to PIP}\| \|\mathbf{v}_{PIP \to DIP}\|}\right)$
-   - DIP/PIP straightness and finger extension ratios.
-   - Palm-normal vector: $\mathbf{n}_{\text{palm}} = (\mathbf{p}_{\text{index\_mcp}} - \mathbf{p}_{\text{wrist}}) \times (\mathbf{p}_{\text{pinky\_mcp}} - \mathbf{p}_{\text{wrist}})$.
-   - Dynamic quality metric $Q \in [0, 1]$ based on palm triangulation area and landmark confidence.
-
-### 3.2 Dynamic Sensor Fusion Rule
-The final confidence score $S(G)$ for gesture $G$ is:
-$$S(G) = (1 - Q) \cdot S_{\text{neural}}(G) + Q \cdot S_{\text{geometric}}(G) + B_{\text{agreement}}$$
-- If both classifiers agree: $B_{\text{agreement}} = +0.20$.
-- If either classifier issues a high-confidence `None` veto: candidate score is attenuated by 50%.
-
-### 3.3 Frame-Rate Independent Exponential State Machine
-All temporal transitions (activation, hold, release) are governed by physical time $\Delta t$ in seconds:
-$$y_t = y_{t-1} + (x_t - y_{t-1}) \cdot \left(1 - e^{-\lambda \Delta t}\right)$$
-- Activation threshold: 0.12s continuous hold.
-- Release threshold: 0.20s continuous absence.
-- Prevents single-frame tracking glitches from dropping active gesture states.
+| Module | Responsibility | Pure (testable in Node) |
+| :--- | :--- | :--- |
+| `src/main.js` | Renderer, UI, camera and microphone lifecycles, render loop | no |
+| `src/core/math.js` | `clamp`, `lerp`, frame-rate-independent `approach`, One-Euro filter, seeded LCG | yes |
+| `src/core/device-profile.js` | GPU classification, quality tier, particle/DPR/inference budgets, `?quality=` parsing | yes |
+| `src/gesture/classifier.js` | Landmark geometry scores, MediaPipe category adapter, fusion | yes |
+| `src/gesture/state-machine.js` | EMA + hysteresis temporal debouncer | yes |
+| `src/audio/dsp.js` | FFT bin mapping, band levels, onset detection | yes |
+| `src/state/share-link.js` | URL-hash scene serialisation and validation | yes |
+| `src/render/shaders/` | Particle and cinematic post-processing GLSL | n/a |
 
 ---
 
-## 4. Web Audio API 4-Band Psychoacoustic DSP
+## 3. Procedural particles
 
-The microphone pipeline splits the FFT spectrum into 4 psychoacoustic frequency bands:
-1. **Sub-Bass (20–60 Hz)**: Modulates deep particle gravity and radial expansion.
-2. **Bass (60–250 Hz)**: Drives shockwave pulses and central core bloom.
-3. **Mid (250–2000 Hz)**: Controls topology rotation rate and color temperature.
-4. **Treble (2000–8000 Hz)**: Drives chaotic Brownian motion and high-frequency turbulence.
+The particle geometry has three attributes per particle: `aIndex` (a normalised index, shuffled once with a seeded Fisher-Yates), `aSeed` and `aPolarity` (jet direction). It has no position buffer. The vertex shader computes each position from `nI = aIndex`, the time `t` and the uniforms (`uShape`, `uScale`, `uGravity`, `uJetPower`, `uChaos`, hand attractor, audio).
 
-### Continuous Adaptive Noise Floor
-Rather than requiring manual sensitivity calibration sliders, an exponential moving average tracks the ambient acoustic noise floor:
-$$N_t = N_{t-1} + (E_{\text{raw}} - N_{t-1}) \cdot \alpha_{\text{slow}} \quad (\alpha_{\text{slow}} = 1 - e^{-0.1 \Delta t})$$
-$$\text{Onset Triggered} \iff E_{\text{raw}} - N_t > \theta_{\text{dynamic}}$$
-This allows reliable beat detection in both a whisper-quiet room and a loud conference hall.
+Because every topology maps `nI` monotonically to radius, an ordered buffer would make draw-range trimming clip the outer edge. The shuffle makes trimming thin the field uniformly instead.
 
----
+### 3.1 Topologies (s = scale, c = chaos, N = particle count, φ_g = 2.399963 rad, the golden angle)
 
-## 5. Memory Architecture & Performance Characteristics
+1. **Singularity accretion**: disk radius `r = s(1.2 + 8 nI^1.5)`, angle `θ = nI·N·φ_g + t·gravity·s / r` (inner orbits turn faster). A sharp mask `|sin(50π nI)|^30` selects jet particles, which are launched along ±y by `aPolarity` and scaled by Jet Energy.
+2. **Quantum lotus**: Fibonacci-sphere placement (`φ = acos(1 − 2nI)`, `θ = nI·N·φ_g`) with a 7-fold superformula-style radial modulation and a time-varying fold of the polar angle.
+3. **4D breathing tesseract**: particles are split into the 16 vertex groups of a hypercube, each perturbed along small 4D loops. They are rotated in the x-w and y-w planes and projected to 3D with perspective factor `2s / (2.5s + w)`.
+4. **Clifford attractor**: a stylised closed form (a perturbed spherical spiral with chaos-scaled 7- and 11-fold harmonics), not an iterated Clifford map.
+5. **Hopf fibration**: each particle lies on a fibre of S³ → S². A point `(cos η·e^{iu}, sin η·e^{iv})` on S³ is projected stereographically into R³; the denominator is clamped to avoid the pole singularity. η breathes slowly.
+6. **Lorenz manifold**: a closed-form parametrisation of the two Lorenz wings (3.2 spiral turns per wing, tilt ≈ 0.51 rad ≈ atan(√(ρ−1)/σ) for σ = 10, ρ = 28). Integrating the ODE per particle per frame is infeasible in a vertex shader.
 
-- **Per-Frame Allocation Rate**: 0 bytes/frame (Zero GC pauses).
-- **GPU Frame Time**: 1.8ms – 2.4ms on Apple M-series / Nvidia RTX / Intel Iris Xe.
-- **Draw Calls**: Exactly 3 draw calls per frame (Particle Geometry Pass, HDR Downsample/Bloom Pass, Gamma/Grain Composition Pass).
-- **Cold Boot Time**: <180ms to interactive rendering.
-- **WASM Init**: Asynchronous lazy download; only requested when user explicitly clicks the camera activation button.
+Shapes 2 to 6 are authored much smaller than the disk, so each one's output is multiplied by a fixed framing factor (1.95 to 3.0) that brings its 90th-percentile radius to about 48 units at the default scale. Scaling the output rather than `s` leaves the curl frequencies, and so the geometry, unchanged.
 
----
+Morphing linearly interpolates between adjacent topologies over 820 ms; the second topology is evaluated only while a morph is in progress. Curl noise (amplitude ∝ chaos, raised by treble), a fixed tilt, a slow spin and the hand attractor (`F ∝ influence·s / (d² + s)`) are applied after the topology.
 
-## 6. Security, Integrity & Privacy Guarantees
+### 3.2 Post-processing
 
-1. **Strict Subresource Integrity**: All 9 external CDN modules are pinned with `sha384` cryptographic hashes inside the `<script type="importmap">`.
-2. **Local ML Validation**: MediaPipe models fetched from CDN are validated via magic byte headers (`TFL3` signature) and minimum byte-count floors before execution.
-3. **Zero Telemetry**: No Google Analytics, no third-party tracking scripts, no cookies, no server logging.
-4. **Isolated Permissions**: Camera and Microphone are strictly opt-in, non-persistent, and immediately released upon tab blur or window unload.
+`EffectComposer`: RenderPass → UnrealBloomPass (skipped when bloom ≈ 0) → cinematic ShaderPass (aspect-correct chromatic aberration and vignette; film grain in gamma space, skipped when grain ≈ 0) → OutputPass (sRGB). Composer targets are 8-bit on every tier, because the additive particle shading is authored to saturate at display white; `UnrealBloomPass` keeps its own half-float mip chain. Above 28,000 drawn particles, point size is multiplied by `sqrt(28000 / count)` so that screen coverage, and with it brightness, does not grow with the quality tier.
 
 ---
 
-## 7. Verification & Automated Testing Suite
+## 4. Gesture pipeline
 
-The repository includes a comprehensive 79-test Playwright suite covering:
-- Mathematical geometry scoring separation across landmark configurations.
-- Palm normal invariance under 360-degree hand roll/pitch.
-- Audio band boundary mapping and onset hysteresis.
-- WebGL 2 shader program compilation and GLSL 3.0 uniform binding.
-- ARIA accessibility tree, modal focus trap isolation, and keyboard navigation.
+1. **Inference**: `GestureRecognizer.recognizeForVideo` on each new camera frame (`requestVideoFrameCallback`), rate-capped per tier (12-26 Hz, lowered further when frame time is poor). MediaPipe timestamps are kept strictly monotonic.
+2. **Geometry classifier**: joint angles, PIP/DIP straightness, fingertip separation and a palm-normal quality `q ∈ [0, 1]` scored for `Pointing_Up`, `Open_Palm` and `Victory`. Missing or non-finite landmarks are tolerated.
+3. **Fusion**: `wGeom = 0.30 + 0.16q`, `score = wGeom·g + (1 − wGeom)·m`, then:
+   - agreement (g > 0.80 and m > 0.55) raises the score to at least `0.84 + 0.14·min(g, m)`
+   - a very confident model (m > 0.82) raises it to at least `0.74 + 0.22m`
+   - unambiguous geometry on a well-presented palm (g > 0.88, q > 0.75) raises it to at least `0.70 + 0.10g`
+   - a model "None" > 0.70 with g < 0.72 multiplies it by 0.72 (a veto)
 
-Run tests locally:
+   Canned negative labels (fist, thumbs, "I love you") also count as None.
+4. **Temporal state machine**: asymmetric EMA (τ = 45 ms attack, 130 ms release), then:
+   - activate ≥ 0.64 with a 0.09 lead over the runner-up, held for 85 ms
+   - switch ≥ 0.74 and ≥ incumbent + 0.10
+   - release after 200 ms below 0.44
+
+   Each sample contributes at most 0.75 × 85 ms toward confirmation, so a gesture always needs two agreeing samples, even at 8 Hz inference or after a stall.
+5. **Mapping**:
+   - `Pointing_Up` raycasts the index fingertip, through an aspect-correct, mirrored NDC mapping, onto the interaction plane as an attractor.
+   - `Open_Palm` maps apparent hand size (image space) to camera distance.
+   - `Victory` maps horizontal hand position to Chaos (0-2).
+   - All mappings go through One-Euro filters and frame-rate-independent easing.
+
+---
+
+## 5. Audio pipeline
+
+`getUserMedia({audio})` → `MediaStreamAudioSourceNode` → `AnalyserNode` (FFT 1024, analyser smoothing 0; smoothing happens on the CPU with frame-rate-independent easing).
+
+| Band | Range | Drives |
+| :--- | :--- | :--- |
+| Sub-bass | 20-80 Hz | bass level (55 % weight) |
+| Mid-bass | 80-250 Hz | bass level (45 % weight) |
+| Mids | 250-2000 Hz | hue rotation |
+| Treble | 2-8 kHz | curl-turbulence amplitude, particle energy |
+
+Bass also swells the field radially. **Onset**: a pulse fires when `bass > 1.4 × slowAverage + 0.05`, with a 140 ms cooldown. The pulse flashes particle energy and bloom and then decays. Because the threshold follows the signal's own running average, beat detection works at any loudness without calibration. Bin boundaries are computed once per stream from the sample rate.
+
+---
+
+## 6. Adaptive quality
+
+`classifyGPU` reads `WEBGL_debug_renderer_info` and sorts the renderer into software (SwiftShader, llvmpipe, Microsoft Basic Render Driver), discrete, integrated or unknown. `pickTier` combines that with `deviceMemory`, `hardwareConcurrency`, `saveData` and the device class:
+
+| Tier | Desktop particles | Mobile particles | DPR cap (desktop) | Inference cap |
+| :--- | ---: | ---: | ---: | ---: |
+| minimal | 28,000 | 18,000 | 1.0 | 12 Hz |
+| low | 48,000 | 30,000 | 1.25 | 18 Hz |
+| medium | 82,000 | 52,000 | 1.75 | 26 Hz |
+| high | 110,000 | 52,000 | 2.0 | 26 Hz |
+
+At runtime a governor moves the pixel ratio and draw range toward the target frame rate (58 FPS on desktop, 50 on mobile and the minimal tier), with a dead zone and cooldown so it does not oscillate. `?quality=minimal|low|medium|high` (aliases: `ultra`, `potato`) pins a tier and disables the governor.
+
+---
+
+## 7. Security and privacy
+
+- **CSP**: `script-src 'self' 'sha256-…' 'wasm-unsafe-eval' blob:` plus the two CDN origins. There is no `'unsafe-inline'`; the only inline script, the import map, is allowed by its hash, which the static audit recomputes. A browser test boots the app under the exact production headers and fails on any CSP violation.
+- **SRI**: every import-map module (Three.js core, 6 addons, both MediaPipe mirrors) carries a `sha384` integrity hash. The MediaPipe WASM files and the model are fetched by MediaPipe's own loader; the model is validated by file signature and size, then cached in CacheStorage with poison eviction.
+- **Other headers**: HSTS, `nosniff`, `X-Frame-Options: DENY`, COOP same-origin, and a Permissions-Policy limiting camera and microphone to this origin.
+- **Privacy**: camera and microphone are requested only on click (the camera before the model downloads). Streams stop when the tab is hidden and resume only if they were on. The app itself sets no cookies and runs no analytics; the in-app privacy note discloses that the MediaPipe library may send non-image usage metrics.
+
+---
+
+## 8. Testing
+
+- **Static audit** (`scripts/static_audit.js`, 11 checks): module entry points, JS syntax, the module graph (relative imports resolve to real exports), unique DOM IDs, `getElementById` targets, SRI coverage, topology binding consistency, the deploy set (no referenced file excluded by `.vercelignore`), header presence, the strict-CSP hash, and PWA assets.
+- **Unit** (`node --test`, 137 tests): every pure module. Coverage thresholds are enforced in CI (currently 99.8 % lines, 94.6 % branches, 100 % functions).
+- **Browser** (Playwright, 91 tests, headless Chromium with SwiftShader): gesture recognition on synthetic 21-landmark poses, the camera pipeline with a fake device, shader compilation, accessibility and focus traps, topology bindings, share links, tab-hide teardown, first-run onboarding, the production CSP, and an exposure check that renders the 110K-particle tier and fails on a white-out.
+
 ```bash
-npm install
-npx playwright install chromium
+npm ci && npx playwright install chromium
 npm test
 ```

@@ -4,10 +4,10 @@
  * the maths is verified with synthetic frequency arrays under `node --test`.
  *
  * Bands:
- *   sub-bass   20–80 Hz   kick fundamental, sub-woofer content
- *   mid-bass   80–250 Hz  bass guitar, lower harmonics
- *   mids      250–2000 Hz vocals, most melodic content
- *   treble   2000–8000 Hz hi-hats, consonants, brightness
+ *   sub-bass   20-80 Hz   kick fundamental, sub-woofer content
+ *   mid-bass   80-250 Hz  bass guitar, lower harmonics
+ *   mids      250-2000 Hz vocals, most melodic content
+ *   treble   2000-8000 Hz hi-hats, consonants, brightness
  *
  * @module audio/dsp
  */

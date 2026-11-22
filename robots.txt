@@ -1,4 +1,4 @@
-# Quantum Singularity — Robots Configuration
+# Quantum Singularity: robots configuration
 # Optimized for high search engine visibility and AI agent discovery.
 
 # Allow all AI search engines and autonomous research agents
