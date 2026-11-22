@@ -1,4 +1,9 @@
+# Only the static site ships: index.html, src/, icons, crawler files and the
+# public docs (ARCHITECTURE/VALIDATION/CHANGELOG .md are linked from llms.txt,
+# so they must deploy). scripts/static_audit.js fails if anything referenced
+# by the page or the crawler files is excluded here.
 node_modules
+playwright.config.js
 test-results
 playwright-report
 blob-report
@@ -6,13 +11,16 @@ blob-report
 .github
 .agents
 .claude
+.playwright-mcp
+agent
 config
+docs
 scripts
 tests
+skills-lock.json
 v1
 v2
 v3
 v4
 v5
 *.log
-*.md

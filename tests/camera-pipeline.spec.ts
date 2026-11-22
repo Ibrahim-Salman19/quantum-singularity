@@ -13,8 +13,10 @@ test.describe('Camera & Gesture Backend Pipeline', () => {
     await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await page.waitForFunction(() => window.__qsReady === true, { timeout: 45000 });
 
-    const guideVisible = await page.locator('#guide-overlay').isVisible();
-    if (guideVisible) await page.click('#modal-launch');
+    // Use the canonical control. This used to branch on whether the first-visit
+    // guide had opened yet, which raced its 600 ms timer: when it lost, nothing
+    // enabled the camera and the test waited out its full poll timeout.
+    await page.click('#camera-toggle');
 
     const status = page.locator('#nstatus');
     await expect(status).not.toHaveText('', { timeout: 10000 });
@@ -43,12 +45,7 @@ test.describe('Camera & Gesture Backend Pipeline', () => {
     await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await page.waitForFunction(() => window.__qsReady === true, { timeout: 45000 });
 
-    const guideVisible = await page.locator('#guide-overlay').isVisible();
-    if (guideVisible) {
-      await page.click('#modal-launch');
-    } else {
-      await page.click('#camera-toggle');
-    }
+    await page.click('#camera-toggle');
 
     await expect
       .poll(async () => page.locator('#camera-toggle').textContent(), { timeout: 150000 })

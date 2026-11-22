@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: 20
+  NODE_VERSION: 22
 
 jobs:
   static-audit:
@@ -28,11 +28,25 @@ jobs:
       - run: npm ci
       - run: npm run test:static
 
+  unit:
+    name: Unit tests + coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Run unit tests (fails below the coverage thresholds)
+        run: npm run test:unit
+
   test-logic:
     name: Tests - gesture/audio/accessibility logic
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    needs: static-audit
+    needs: [static-audit, unit]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,7 +77,7 @@ jobs:
     name: Tests - WebGL/camera/audio pipeline
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    needs: static-audit
+    needs: [static-audit, unit]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -15,10 +15,8 @@ test.describe('Tab hide teardown & restore', () => {
     await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await page.waitForFunction(() => window.__qsReady === true, { timeout: 45000 });
 
-    const guideVisible = await page.locator('#guide-overlay').isVisible();
-    if (guideVisible) await page.click('#modal-launch');
-
-    // Camera on. (#modal-launch is the guide's CTA, which enables the camera.)
+    // Camera on, via the canonical control.
+    await page.click('#camera-toggle');
     await expect
       .poll(async () => page.locator('#camera-toggle').textContent(), { timeout: 150000 })
       .toContain('Disable camera');
@@ -53,8 +51,7 @@ test.describe('Tab hide teardown & restore', () => {
     await page.goto('/', { waitUntil: 'load', timeout: 60000 });
     await page.waitForFunction(() => window.__qsReady === true, { timeout: 45000 });
 
-    // Do NOT click #modal-launch: it is the guide's CTA and enables the camera.
-    // The guide overlay staying open does not block the visibility cycle below.
+    // The camera is never enabled in this test.
     await expect(page.locator('#camera-toggle')).toHaveText('Enable camera');
 
     await page.evaluate(() => {
