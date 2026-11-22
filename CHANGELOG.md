@@ -34,7 +34,7 @@
 ### Added
 - **Unit test layer**: 137 `node --test` tests across every logic module, with enforced coverage thresholds (currently 99.8 % lines, 94.6 % branches, 100 % functions) and a dedicated CI job that gates the browser suites.
 - **Exposure browser test** (`tests/exposure.spec.ts`): renders the 110K-particle tier at a fixed simulated moment and fails if the frame is blown out. It fails on the renderer before the fix (44.3 % near-white pixels) and passes after it (0 %).
-- **`scripts/capture-media.mjs`**: regenerates the README and portfolio media (a seamless 9-second loop as MP4, WebM and GIF, a poster and an interface still) from the running app, on a fixed simulated clock.
+- **`scripts/capture-media.mjs`**: regenerates the README and portfolio media (a 7-second loop as MP4, WebM and GIF, a poster and an interface still) from the running app, on a fixed simulated clock.
 - **Production-header browser test** (`tests/csp.spec.ts`): boots the full app under the exact `vercel.json` headers and fails on any CSP violation.
 - **Onboarding browser tests** (`tests/onboarding.spec.ts`).
 - **`?quality=minimal|low|medium|high`**: pins a quality tier and disables adaptive quality.
