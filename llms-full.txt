@@ -1,7 +1,7 @@
 # Quantum Singularity: Technical Specification
 
 > Reference for AI agents, search systems and engineers. Every constant below is taken from the source.
-> Canonical URL: https://animation-zeta-rosy.vercel.app/
+> Canonical URL: https://quantumsingularity.vercel.app/
 > Repository: https://github.com/Ibrahim-Salman19/quantum-singularity
 > License: MIT
 
